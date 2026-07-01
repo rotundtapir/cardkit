@@ -50,3 +50,15 @@ Commits without a sign-off will not be merged.
 ```
 
 Requires JDK 21. Android modules additionally require the Android SDK.
+
+## Git hooks
+
+A pre-commit hook runs `./gradlew lint test` so CI lint/test failures are caught
+locally. Enable it once per clone:
+
+```bash
+git config core.hooksPath scripts/hooks
+```
+
+It skips doc-only commits and selects a JDK 21 automatically. Bypass in a pinch
+with `git commit --no-verify`.
