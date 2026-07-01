@@ -1,0 +1,7 @@
+# Copy to <app>/.github/FUNDING.yml and set your real accounts.
+# GitHub renders a Sponsor button; F-Droid parses this into Donate:/Liberapay: metadata.
+github: [your_github_username]
+liberapay: your_liberapay_name
+# ko_fi: your_kofi_name
+# open_collective: your_collective
+# custom: ["https://example.org/donate"]
