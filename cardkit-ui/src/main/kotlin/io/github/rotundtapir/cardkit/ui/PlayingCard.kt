@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -37,6 +38,13 @@ private fun Card.ink(): Color = when (this) {
     Joker -> RedInk
 }
 
+/** Stable human-readable label, e.g. "10♥" or "Joker" — also used as the card's UI-test tag. */
+val Card.displayLabel: String
+    get() = when (this) {
+        is SuitedCard -> rank.label + suit.symbol
+        Joker -> "Joker"
+    }
+
 /**
  * Renders a single face-up [card] as a rounded white card with rank/suit pips in opposite corners and
  * a large central symbol. The [Joker] is drawn with a "JOKER" label.
@@ -54,7 +62,8 @@ fun PlayingCard(
             .size(width, height)
             .clip(RoundedCornerShape(width * 0.12f))
             .background(CardFace)
-            .border(1.dp, Color(0x33000000), RoundedCornerShape(width * 0.12f)),
+            .border(1.dp, Color(0x33000000), RoundedCornerShape(width * 0.12f))
+            .testTag("card:${card.displayLabel}"),
     ) {
         when (card) {
             is SuitedCard -> {

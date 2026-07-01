@@ -16,12 +16,14 @@ private val LightColors = lightColorScheme(
     primary = Color(0xFF2E7D32),
     secondary = Color(0xFFB71C1C),
     background = TableGreen,
+    onBackground = Color(0xFFF5F5F5),
 )
 
 private val DarkColors = darkColorScheme(
     primary = Color(0xFF66BB6A),
     secondary = Color(0xFFEF5350),
     background = TableGreenDark,
+    onBackground = Color(0xFFF5F5F5),
 )
 
 /**
