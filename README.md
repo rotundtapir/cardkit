@@ -61,6 +61,6 @@ see [`LICENSE`](LICENSE) and [`LICENSE-EXCEPTION.md`](LICENSE-EXCEPTION.md). Thi
 lets contributed code ship in both free/libre and ad-supported builds. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) (contributions require a DCO sign-off).
 
-> **Namespace note:** the Maven group id / package prefix `io.github.rotundtapir`
-> is a placeholder based on the GitHub account convention. Adjust it to your
-> actual GitHub username/org before the first release.
+> **Namespace:** the Maven group id / package prefix `io.github.rotundtapir` is
+> the `io.github.<org>` namespace for the GitHub org `rotund-tapir`, with the
+> hyphen dropped (hyphens aren't valid in Java/Kotlin package names).
