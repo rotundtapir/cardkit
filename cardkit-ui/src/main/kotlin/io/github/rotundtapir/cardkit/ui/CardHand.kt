@@ -56,7 +56,7 @@ fun CardHand(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .clip(RoundedCornerShape(cardWidth * 0.12f))
+                                .clip(RoundedCornerShape(cardWidth * 0.08f))
                                 .background(Color(0x8FFAFAFA)),
                         )
                     }

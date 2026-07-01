@@ -54,6 +54,13 @@ dependencies {
 `cardkit-core` builds with only a JDK. The Android modules require the Android
 SDK (`compileSdk 35`).
 
+## Artwork
+
+The card faces in `cardkit-ui` are Byron Knoll's
+[Vector Playing Cards](https://code.google.com/archive/p/vector-playing-cards/)
+(released into the **public domain** by the author), bundled as downscaled PNGs
+under `cardkit-ui/src/main/res/drawable-nodpi/`.
+
 ## License
 
 GPLv3-or-later **with** a Google Mobile Ads / Play Billing linking exception —
