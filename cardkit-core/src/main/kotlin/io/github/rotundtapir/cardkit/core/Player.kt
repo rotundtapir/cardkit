@@ -65,4 +65,11 @@ class ChannelPlayer<View, Action> : Player<View, Action> {
     suspend fun submit(action: Action) {
         responses.send(action)
     }
+
+    /**
+     * Non-suspending submit that only succeeds while the engine is actually waiting in [decide].
+     * Use this from UIs: a double-tap (or a tap racing a state change) is dropped instead of being
+     * queued and later consumed as the answer to a *different* prompt.
+     */
+    fun trySubmit(action: Action): Boolean = responses.trySend(action).isSuccess
 }
