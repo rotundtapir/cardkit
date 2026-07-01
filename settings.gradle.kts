@@ -22,8 +22,9 @@ dependencyResolutionManagement {
 
 rootProject.name = "cardkit"
 
-// Modules are added by their respective commits:
-//   include(":cardkit-core")
+include(":cardkit-core")
+
+// Further modules are added by their respective commits:
 //   include(":cardkit-ui")
 //   include(":cardkit-monetization")
 //   include(":cardkit-monetization-play")
