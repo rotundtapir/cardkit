@@ -61,6 +61,19 @@ The card faces in `cardkit-ui` are Byron Knoll's
 (released into the **public domain** by the author), bundled as downscaled PNGs
 under `cardkit-ui/src/main/res/drawable-nodpi/`.
 
+The 11/12/13-of-suit faces (used by six-handed 500's 63-card deck) do not exist in
+Knoll's set; they are new compositions made for this library by extracting the pip
+and index glyphs from Knoll's public-domain originals and laying out symmetric
+11/12/13-pip grids in the same style. The card back (`card_back.png`) is likewise an
+original design (indigo lattice) drawn for this library.
+
+Being derived from public-domain material does not by itself place a new work in
+the public domain, so to keep the whole card-art set uniformly reusable we
+**dedicate these files** (`card_11_*`, `card_12_*`, `card_13_*`, `card_back.png`)
+**to the public domain under
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)**. Everything else in
+this repository remains under the repository license below.
+
 ## License
 
 GPLv3-or-later **with** a Google Mobile Ads / Play Billing linking exception —

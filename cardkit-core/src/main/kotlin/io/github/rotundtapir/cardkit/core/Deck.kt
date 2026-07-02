@@ -5,11 +5,12 @@ package io.github.rotundtapir.cardkit.core
  * Builds a deck of [Card]s. Deliberately flexible so that games with non-standard decks can express
  * exactly the composition they need — e.g. 500's 43-card deck, Euchre's 24-card deck, etc.
  *
- * Example (a fragment of the 500 deck):
+ * Example (a fragment of the 500 deck — note the classic game subtracts the [extendedRanks]
+ * that `rangeTo` includes between TEN and JACK):
  * ```
  * val cards = buildDeck {
- *     suits(Suit.HEARTS, Suit.DIAMONDS) { ranks(Rank.FOUR..Rank.ACE) }
- *     suits(Suit.SPADES, Suit.CLUBS)   { ranks(Rank.FIVE..Rank.ACE) }
+ *     suits(Suit.HEARTS, Suit.DIAMONDS) { ranks((Rank.FOUR..Rank.ACE) - extendedRanks) }
+ *     suits(Suit.SPADES, Suit.CLUBS)   { ranks((Rank.FIVE..Rank.ACE) - extendedRanks) }
  *     joker()
  * }
  * ```
@@ -53,10 +54,17 @@ class DeckBuilder internal constructor() {
 fun buildDeck(block: DeckBuilder.() -> Unit): List<Card> =
     DeckBuilder().apply(block).build()
 
-/** All 13 ranks of a suit, low to high (Ace high). */
-val ranksTwoToAce: List<Rank> = Rank.entries.toList()
+/** The three extended ranks (11/12/13) used by large-deck games such as six-handed 500. */
+val extendedRanks: Set<Rank> = setOf(Rank.ELEVEN, Rank.TWELVE, Rank.THIRTEEN)
 
-/** Inclusive rank range using enum order, e.g. `Rank.FOUR..Rank.ACE`. */
+/** The 13 classic ranks of a suit, low to high (Ace high). Excludes the [extendedRanks]. */
+val ranksTwoToAce: List<Rank> = Rank.entries.filter { it !in extendedRanks }
+
+/**
+ * Inclusive rank range in enum (strength) order, e.g. `Rank.FOUR..Rank.ACE`. Note this follows raw
+ * enum order, so a range spanning TEN..JACK includes the [extendedRanks] declared between them —
+ * subtract [extendedRanks] for a classic-deck range.
+ */
 operator fun Rank.rangeTo(other: Rank): List<Rank> =
     Rank.entries.subList(this.ordinal, other.ordinal + 1)
 

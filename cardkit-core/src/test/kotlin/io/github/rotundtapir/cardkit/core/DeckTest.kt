@@ -22,10 +22,17 @@ class DeckTest {
 
     @Test
     fun `rangeTo yields inclusive rank range in enum order`() {
+        // Raw enum order: the extended ranks sit between TEN and JACK by design.
+        assertEquals(
+            listOf(Rank.FOUR, Rank.FIVE, Rank.SIX, Rank.SEVEN, Rank.EIGHT, Rank.NINE, Rank.TEN,
+                Rank.ELEVEN, Rank.TWELVE, Rank.THIRTEEN, Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE),
+            Rank.FOUR..Rank.ACE,
+        )
+        // Subtracting extendedRanks gives the classic range.
         assertEquals(
             listOf(Rank.FOUR, Rank.FIVE, Rank.SIX, Rank.SEVEN, Rank.EIGHT, Rank.NINE, Rank.TEN,
                 Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE),
-            Rank.FOUR..Rank.ACE,
+            (Rank.FOUR..Rank.ACE) - extendedRanks,
         )
         assertEquals(listOf(Rank.ACE), Rank.ACE..Rank.ACE)
     }
@@ -33,8 +40,8 @@ class DeckTest {
     @Test
     fun `buildDeck composes a 500-style 43-card deck`() {
         val deck = buildDeck {
-            suits(Suit.HEARTS, Suit.DIAMONDS) { ranks(Rank.FOUR..Rank.ACE) }   // 11 * 2 = 22
-            suits(Suit.SPADES, Suit.CLUBS) { ranks(Rank.FIVE..Rank.ACE) }        // 10 * 2 = 20
+            suits(Suit.HEARTS, Suit.DIAMONDS) { ranks((Rank.FOUR..Rank.ACE) - extendedRanks) } // 11 * 2 = 22
+            suits(Suit.SPADES, Suit.CLUBS) { ranks((Rank.FIVE..Rank.ACE) - extendedRanks) }      // 10 * 2 = 20
             joker()                                                              // 1
         }
         assertEquals(43, deck.size)

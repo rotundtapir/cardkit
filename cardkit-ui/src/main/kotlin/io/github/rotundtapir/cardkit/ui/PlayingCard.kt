@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -53,6 +52,9 @@ private fun Card.faceRes(): Int = when (this) {
             Rank.EIGHT -> R.drawable.card_8_of_clubs
             Rank.NINE -> R.drawable.card_9_of_clubs
             Rank.TEN -> R.drawable.card_10_of_clubs
+            Rank.ELEVEN -> R.drawable.card_11_of_clubs
+            Rank.TWELVE -> R.drawable.card_12_of_clubs
+            Rank.THIRTEEN -> R.drawable.card_13_of_clubs
             Rank.JACK -> R.drawable.card_jack_of_clubs
             Rank.QUEEN -> R.drawable.card_queen_of_clubs
             Rank.KING -> R.drawable.card_king_of_clubs
@@ -68,6 +70,9 @@ private fun Card.faceRes(): Int = when (this) {
             Rank.EIGHT -> R.drawable.card_8_of_diamonds
             Rank.NINE -> R.drawable.card_9_of_diamonds
             Rank.TEN -> R.drawable.card_10_of_diamonds
+            Rank.ELEVEN -> R.drawable.card_11_of_diamonds
+            Rank.TWELVE -> R.drawable.card_12_of_diamonds
+            Rank.THIRTEEN -> R.drawable.card_13_of_diamonds
             Rank.JACK -> R.drawable.card_jack_of_diamonds
             Rank.QUEEN -> R.drawable.card_queen_of_diamonds
             Rank.KING -> R.drawable.card_king_of_diamonds
@@ -83,6 +88,9 @@ private fun Card.faceRes(): Int = when (this) {
             Rank.EIGHT -> R.drawable.card_8_of_hearts
             Rank.NINE -> R.drawable.card_9_of_hearts
             Rank.TEN -> R.drawable.card_10_of_hearts
+            Rank.ELEVEN -> R.drawable.card_11_of_hearts
+            Rank.TWELVE -> R.drawable.card_12_of_hearts
+            Rank.THIRTEEN -> R.drawable.card_13_of_hearts
             Rank.JACK -> R.drawable.card_jack_of_hearts
             Rank.QUEEN -> R.drawable.card_queen_of_hearts
             Rank.KING -> R.drawable.card_king_of_hearts
@@ -98,6 +106,9 @@ private fun Card.faceRes(): Int = when (this) {
             Rank.EIGHT -> R.drawable.card_8_of_spades
             Rank.NINE -> R.drawable.card_9_of_spades
             Rank.TEN -> R.drawable.card_10_of_spades
+            Rank.ELEVEN -> R.drawable.card_11_of_spades
+            Rank.TWELVE -> R.drawable.card_12_of_spades
+            Rank.THIRTEEN -> R.drawable.card_13_of_spades
             Rank.JACK -> R.drawable.card_jack_of_spades
             Rank.QUEEN -> R.drawable.card_queen_of_spades
             Rank.KING -> R.drawable.card_king_of_spades
@@ -134,7 +145,10 @@ fun PlayingCard(
     }
 }
 
-/** The back of a card, for opponents' hidden hands and the stock/kitty. */
+/**
+ * The back of a card, for opponents' hidden hands and the stock/kitty. Renders the bundled
+ * original card-back artwork (an indigo lattice, drawn for this library — public domain).
+ */
 @Composable
 fun CardBack(
     modifier: Modifier = Modifier,
@@ -145,15 +159,14 @@ fun CardBack(
         modifier = modifier
             .size(width, height)
             .clip(RoundedCornerShape(width * 0.12f))
-            .background(Color(0xFF303F9F))
+            .background(Color.White)
             .border(1.dp, Color(0x55000000), RoundedCornerShape(width * 0.12f)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(width * 0.1f)
-                .clip(RoundedCornerShape(width * 0.08f))
-                .background(Color(0x33FFFFFF)),
+        Image(
+            painter = painterResource(R.drawable.card_back),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
