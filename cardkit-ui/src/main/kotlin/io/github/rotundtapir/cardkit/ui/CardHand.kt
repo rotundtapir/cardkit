@@ -36,6 +36,8 @@ fun CardHand(
     dimUnplayable: Boolean = true,
     selected: Set<Card> = emptySet(),
     onCardClick: (Card) -> Unit = {},
+    /** Extra modifier applied to each card's wrapper — e.g. per-card anchors or test hooks. */
+    cardModifier: (Card) -> Modifier = { Modifier },
 ) {
     Layout(
         modifier = modifier.wrapContentSize(),
@@ -48,7 +50,8 @@ fun CardHand(
                         .graphicsLayer { translationY = lift * density }
                         .then(
                             if (enabled) Modifier.clickable { onCardClick(card) } else Modifier
-                        ),
+                        )
+                        .then(cardModifier(card)),
                 ) {
                     PlayingCard(card, width = cardWidth)
                     if (!enabled && dimUnplayable) {
