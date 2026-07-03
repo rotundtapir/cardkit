@@ -74,6 +74,12 @@ the public domain, so to keep the whole card-art set uniformly reusable we
 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)**. Everything else in
 this repository remains under the repository license below.
 
+## Audio
+
+The sound effects in `cardkit-ui` (`res/raw/*.ogg` — card plays, deals, shuffles,
+trick pickups, chips) are from [Kenney](https://kenney.nl)'s **Casino Audio** pack,
+released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+
 ## License
 
 GPLv3-or-later **with** a Google Mobile Ads / Play Billing linking exception —
