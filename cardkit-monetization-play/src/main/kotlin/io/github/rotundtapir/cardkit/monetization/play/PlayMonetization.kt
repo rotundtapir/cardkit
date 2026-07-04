@@ -2,7 +2,6 @@
 package io.github.rotundtapir.cardkit.monetization.play
 
 import android.app.Activity
-import android.content.Context
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,6 +26,10 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.ump.ConsentDebugSettings
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import io.github.rotundtapir.cardkit.monetization.Monetization
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,9 +41,14 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Ad unit ids and the product id are supplied via [Config] so the library carries no hard-coded
  * account details. Use Google's official test ad unit ids during development.
+ *
+ * Ads are gated behind Google's User Messaging Platform: on construction the current consent state
+ * is refreshed (showing the GDPR consent form to EEA/UK users when required) and the Mobile Ads SDK
+ * is only initialised — and ads only requested — once [ConsentInformation.canRequestAds] holds.
+ * Consent failures (offline, misconfiguration) never block the app; ads simply stay off.
  */
 class PlayMonetization(
-    context: Context,
+    activity: Activity,
     private val config: Config,
 ) : Monetization, PurchasesUpdatedListener {
 
@@ -48,14 +56,28 @@ class PlayMonetization(
         val bannerAdUnitId: String,
         val interstitialAdUnitId: String,
         val removeAdsProductId: String,
+        /** Debug-only: force EEA geography so the consent form always shows. */
+        val consentDebugGeographyEea: Boolean = false,
+        /** Debug-only: UMP test device hashed ids (logged by UMP on first run). */
+        val consentTestDeviceHashedIds: List<String> = emptyList(),
     )
 
-    private val appContext = context.applicationContext
+    private val appContext = activity.applicationContext
 
     private val _adsRemoved = MutableStateFlow(false)
     override val adsRemoved: StateFlow<Boolean> = _adsRemoved.asStateFlow()
 
     override val offersRemoveAds: Boolean = true
+
+    private val consentInformation = UserMessagingPlatform.getConsentInformation(appContext)
+
+    /** Ads may be requested (consent obtained or not required) — gates the banner and interstitials. */
+    private val _adsEnabled = MutableStateFlow(false)
+
+    private val _privacyOptionsRequired = MutableStateFlow(false)
+    override val privacyOptionsRequired: StateFlow<Boolean> = _privacyOptionsRequired.asStateFlow()
+
+    private var adsInitialized = false
 
     private var interstitial: InterstitialAd? = null
     private var removeAdsProduct: ProductDetails? = null
@@ -68,9 +90,64 @@ class PlayMonetization(
         .build()
 
     init {
+        connectBilling() // billing is independent of ad consent
+        requestConsent(activity)
+    }
+
+    // --- Consent (UMP) -----------------------------------------------------------------------------
+
+    private fun requestConsent(activity: Activity) {
+        val params = ConsentRequestParameters.Builder().apply {
+            if (config.consentDebugGeographyEea || config.consentTestDeviceHashedIds.isNotEmpty()) {
+                setConsentDebugSettings(
+                    ConsentDebugSettings.Builder(activity).apply {
+                        config.consentTestDeviceHashedIds.forEach(::addTestDeviceHashedId)
+                        if (config.consentDebugGeographyEea) {
+                            setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                        }
+                    }.build()
+                )
+            }
+        }.build()
+
+        consentInformation.requestConsentInfoUpdate(
+            activity,
+            params,
+            {
+                // Shows the form only when consent is required; the callback fires either way.
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
+                    // Form errors (offline, misconfiguration) must never block the game: proceed,
+                    // and ads stay off until canRequestAds() holds on a later launch.
+                    updateFromConsentState()
+                }
+            },
+            { _ ->
+                updateFromConsentState()
+            },
+        )
+        // Consent persisted from a previous session lets ads start immediately, in parallel with
+        // the update above (Google's recommended pattern).
+        updateFromConsentState()
+    }
+
+    private fun updateFromConsentState() {
+        _privacyOptionsRequired.value = consentInformation.privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        if (consentInformation.canRequestAds()) initializeAds()
+    }
+
+    private fun initializeAds() {
+        if (adsInitialized) return // all UMP callbacks arrive on the main thread
+        adsInitialized = true
         MobileAds.initialize(appContext) { }
-        connectBilling()
+        _adsEnabled.value = true
         loadInterstitial()
+    }
+
+    override fun showPrivacyOptionsForm(activity: Activity) {
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { _ ->
+            updateFromConsentState()
+        }
     }
 
     // --- Billing ---------------------------------------------------------------------------------
@@ -154,7 +231,8 @@ class PlayMonetization(
     @Composable
     override fun BannerSlot(modifier: Modifier) {
         val removed by adsRemoved.collectAsState()
-        if (removed) return
+        val enabled by _adsEnabled.collectAsState()
+        if (removed || !enabled) return
         AndroidView(
             modifier = modifier.fillMaxWidth(),
             factory = { ctx ->
@@ -168,7 +246,7 @@ class PlayMonetization(
     }
 
     private fun loadInterstitial() {
-        if (_adsRemoved.value) return
+        if (_adsRemoved.value || !_adsEnabled.value) return
         InterstitialAd.load(
             appContext,
             config.interstitialAdUnitId,
@@ -186,7 +264,7 @@ class PlayMonetization(
     }
 
     override fun maybeShowInterstitial(activity: Activity) {
-        if (_adsRemoved.value) return
+        if (_adsRemoved.value || !_adsEnabled.value) return
         val ad = interstitial ?: return
         ad.show(activity)
         interstitial = null

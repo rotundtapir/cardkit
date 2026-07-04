@@ -4,6 +4,7 @@ package io.github.rotundtapir.cardkit.monetization
 import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -39,6 +40,21 @@ interface Monetization {
      */
     fun launchRemoveAdsOrDonate(activity: Activity)
 
+    /**
+     * Whether a privacy-options entry point must be offered — `true` when ad-consent regulations
+     * (e.g. GDPR for EEA/UK users) entitle the user to revisit their consent choices. Always `false`
+     * where there are no ads and no consent (FOSS builds).
+     */
+    val privacyOptionsRequired: StateFlow<Boolean>
+        get() = NEVER
+
+    /** Re-open the ad-consent / privacy options form. No-op by default (FOSS builds). */
+    fun showPrivacyOptionsForm(activity: Activity) {}
+
     /** Release any held resources (ad views, billing connections). Called when the app is destroyed. */
     fun dispose()
+
+    companion object {
+        private val NEVER: StateFlow<Boolean> = MutableStateFlow(false)
+    }
 }
