@@ -46,13 +46,32 @@ boundaries — CI enforces them and they are the project's reason for existing.
 | Module | Platform | Role |
 | --- | --- | --- |
 | `cardkit-core` | pure Kotlin/JVM | authoritative game engine — card model, deck DSL, dealing, `GameRules`/`GameDriver`/`Player`. **Must not** touch `android.*`, AndroidX, or Compose (keeps it server-runnable for future online multiplayer). |
-| `cardkit-ui` | Android / Compose | game-agnostic card-rendering Compose primitives; `api`-depends on `cardkit-core`. |
+| `cardkit-ui` | Android / Compose | game-agnostic card-rendering Compose primitives + the card-table sound engine (`SoundEffect`/`SoundManager`/`rememberSoundManager`, CC0 OGGs in `res/raw`); `api`-depends on `cardkit-core`. |
 | `cardkit-monetization` | Android | the `Monetization` interface + a **FOSS no-op** implementation (donation link). **Zero proprietary deps.** |
 | `cardkit-monetization-play` | Android | the *only* module allowed to reference Google Mobile Ads / Play Billing / UMP. Consumed **only** by an app's `play` build flavor. |
 
 `cardkit-core` and `cardkit-ui` must never reference Google Mobile Ads, Play Billing,
 Firebase, or any proprietary dependency — that is what lets a game's F-Droid flavor
-exclude `cardkit-monetization-play` and contain zero non-free code.
+exclude `cardkit-monetization-play` and contain zero non-free code. The same rule
+applies to the `Monetization` interface itself: new members need FOSS-safe defaults
+(see `privacyOptionsRequired` / `showPrivacyOptionsForm`) so `FossMonetization` and
+consumers never see a GMS type.
+
+## Monetization seams (hard-won invariants)
+
+- **Consent before ads.** `PlayMonetization` gathers UMP/GDPR consent on construction and only
+  initialises the Mobile Ads SDK — and loads any ad — once `canRequestAds()` holds. Consent
+  failures (offline, misconfiguration) must never block the app: ads just stay off. `Config` has
+  debug knobs (`consentDebugGeographyEea`, `consentTestDeviceHashedIds`); note debug geography
+  only applies on test devices (emulators qualify automatically, physical phones must be added).
+- **`maybeShowInterstitial(activity, onDismissed)`**: the continuation fires when the ad closes
+  — or immediately when nothing shows (FOSS, ads removed, none loaded, show failure). Callers
+  rely on it to hold game flow (deal animations, bot turns) while an ad owns the screen; every
+  implementation must guarantee exactly-once invocation.
+- **Sound is silent-context safe.** `SoundManager` (cardkit-ui) creates its `SoundPool` lazily on
+  the first audible play: at volume 0 no native audio is ever touched (instrumentation runs on
+  `-no-audio` emulators crash otherwise), and `rememberSoundManager` shares one process-wide
+  instance so activity recreation cannot churn native audio resources.
 
 ## Engine model (cardkit-core)
 
