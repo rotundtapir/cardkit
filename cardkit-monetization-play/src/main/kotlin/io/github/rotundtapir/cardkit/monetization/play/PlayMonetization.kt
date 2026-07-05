@@ -19,9 +19,11 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.ProductDetails
+import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
@@ -263,9 +265,19 @@ class PlayMonetization(
         )
     }
 
-    override fun maybeShowInterstitial(activity: Activity) {
-        if (_adsRemoved.value || !_adsEnabled.value) return
-        val ad = interstitial ?: return
+    override fun maybeShowInterstitial(activity: Activity, onDismissed: () -> Unit) {
+        if (_adsRemoved.value || !_adsEnabled.value) {
+            onDismissed()
+            return
+        }
+        val ad = interstitial ?: run {
+            onDismissed()
+            return
+        }
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() = onDismissed()
+            override fun onAdFailedToShowFullScreenContent(error: AdError) = onDismissed()
+        }
         ad.show(activity)
         interstitial = null
         loadInterstitial() // preload the next one

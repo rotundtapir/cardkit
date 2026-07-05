@@ -31,8 +31,12 @@ interface Monetization {
     @Composable
     fun BannerSlot(modifier: Modifier)
 
-    /** Show an interstitial if one is ready and ads are enabled; otherwise does nothing. */
-    fun maybeShowInterstitial(activity: Activity)
+    /**
+     * Show an interstitial if one is ready and ads are enabled. [onDismissed] is invoked once the
+     * ad is closed — or immediately when no ad shows (FOSS, ads removed, nothing loaded) — so
+     * callers can hold game flow (animations, the next deal) until the screen is theirs again.
+     */
+    fun maybeShowInterstitial(activity: Activity, onDismissed: () -> Unit = {})
 
     /**
      * Either launch the "remove ads" purchase flow (Play) or open the donation page (FOSS), depending

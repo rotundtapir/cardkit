@@ -30,8 +30,9 @@ class FossMonetization(private val donationUrl: String) : Monetization {
         // No ads in FOSS builds.
     }
 
-    override fun maybeShowInterstitial(activity: Activity) {
-        // No ads in FOSS builds.
+    override fun maybeShowInterstitial(activity: Activity, onDismissed: () -> Unit) {
+        // No ads in FOSS builds — the caller's continuation runs at once.
+        onDismissed()
     }
 
     override fun launchRemoveAdsOrDonate(activity: Activity) {
