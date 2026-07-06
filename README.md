@@ -88,5 +88,5 @@ lets contributed code ship in both free/libre and ad-supported builds. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) (contributions require a DCO sign-off).
 
 > **Namespace:** the Maven group id / package prefix `io.github.rotundtapir` is
-> the `io.github.<org>` namespace for the GitHub org `rotund-tapir`, with the
-> hyphen dropped (hyphens aren't valid in Java/Kotlin package names).
+> the `io.github.<account>` namespace of the GitHub account
+> [`rotundtapir`](https://github.com/rotundtapir) that publishes this library.
