@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Consent failures (offline, misconfiguration) never block the app; ads simply stay off.
  */
 class PlayMonetization(
-    activity: Activity,
+    private val activity: Activity,
     private val config: Config,
 ) : Monetization, PurchasesUpdatedListener {
 
@@ -146,7 +146,7 @@ class PlayMonetization(
         loadInterstitial()
     }
 
-    override fun showPrivacyOptionsForm(activity: Activity) {
+    override fun showPrivacyOptionsForm() {
         UserMessagingPlatform.showPrivacyOptionsForm(activity) { _ ->
             updateFromConsentState()
         }
@@ -214,7 +214,7 @@ class PlayMonetization(
 
     private fun Purchase.isRemoveAds(): Boolean = products.contains(config.removeAdsProductId)
 
-    override fun launchRemoveAdsOrDonate(activity: Activity) {
+    override fun launchRemoveAdsOrDonate() {
         val product = removeAdsProduct ?: return
         val flowParams = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(
@@ -265,7 +265,7 @@ class PlayMonetization(
         )
     }
 
-    override fun maybeShowInterstitial(activity: Activity, onDismissed: () -> Unit) {
+    override fun maybeShowInterstitial(onDismissed: () -> Unit) {
         if (_adsRemoved.value || !_adsEnabled.value) {
             onDismissed()
             return
