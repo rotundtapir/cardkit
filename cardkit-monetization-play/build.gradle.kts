@@ -12,7 +12,7 @@ plugins {
 // This is permitted under the project's GPL linking exception (see LICENSE-EXCEPTION.md).
 android {
     namespace = "io.github.rotundtapir.cardkit.monetization.play"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24

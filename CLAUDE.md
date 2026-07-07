@@ -16,7 +16,7 @@ source module.
 Requires **JDK 21**. The Android Gradle Plugin does not run on JDK 25+; do not use a
 newer JDK. JDK auto-download is disabled (`org.gradle.java.installations.auto-download=false`),
 so a JDK 21 must be installed locally. Android modules also need the Android SDK
-(`compileSdk 35`).
+(`compileSdk 36`).
 
 ```bash
 ./gradlew build                 # compile all modules + run tests

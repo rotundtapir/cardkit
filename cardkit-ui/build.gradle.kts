@@ -11,7 +11,7 @@ plugins {
 // game's UI. No proprietary dependencies.
 android {
     namespace = "io.github.rotundtapir.cardkit.ui"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24

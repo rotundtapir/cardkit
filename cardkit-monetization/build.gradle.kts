@@ -12,7 +12,7 @@ plugins {
 // in cardkit-monetization-play. That separation is what keeps F-Droid builds non-proprietary.
 android {
     namespace = "io.github.rotundtapir.cardkit.monetization"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
