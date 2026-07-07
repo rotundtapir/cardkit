@@ -19,16 +19,16 @@ so a JDK 21 must be installed locally. Android modules also need the Android SDK
 (`compileSdk 36`).
 
 ```bash
-./gradlew build                 # compile all modules + run tests
-./gradlew :cardkit-core:test    # cardkit-core needs only a JDK (no Android SDK)
-./gradlew lint test             # what the pre-commit hook and CI run
+./gradlew build                    # compile all modules + run tests
+./gradlew :cardkit-core:jvmTest    # cardkit-core needs only a JDK (no Android SDK)
+./gradlew lint jvmTest             # what the pre-commit hook and CI run
 
 # Run a single test class or method (JUnit 5):
-./gradlew :cardkit-core:test --tests "io.github.rotundtapir.cardkit.core.DeckTest"
-./gradlew :cardkit-core:test --tests "*DeckTest.standard deck has 52 cards"
+./gradlew :cardkit-core:jvmTest --tests "io.github.rotundtapir.cardkit.core.DeckTest"
+./gradlew :cardkit-core:jvmTest --tests "*DeckTest.standard deck has 52 cards"
 ```
 
-Enable the pre-commit hook (runs `./gradlew lint test`, skips doc-only commits,
+Enable the pre-commit hook (runs `./gradlew lint jvmTest`, skips doc-only commits,
 auto-selects a JDK 21) once per clone:
 
 ```bash

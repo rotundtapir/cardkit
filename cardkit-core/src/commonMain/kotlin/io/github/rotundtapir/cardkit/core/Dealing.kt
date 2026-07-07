@@ -2,6 +2,7 @@
 package io.github.rotundtapir.cardkit.core
 
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
 import kotlin.random.Random
 
 /**

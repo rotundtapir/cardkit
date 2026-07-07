@@ -1,25 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-cardkit-ads-exception
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Pure Kotlin/JVM. MUST NOT depend on any Android or proprietary library, so the
-// authoritative game engine can also run server-side (future online multiplayer).
-dependencies {
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.serialization.json)
-
-    testImplementation(kotlin("test"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testRuntimeOnly(libs.junit.platform.launcher)
-}
-
+// Pure Kotlin, no Android or proprietary dependency: the authoritative game engine runs on the
+// JVM (Android apps, future server) and on wasmJs (browser builds). Keep every target platform-free.
 kotlin {
     jvmToolchain(21)
+    jvm()
+    wasmJs {
+        browser()
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.serialization.json)
+        }
+        jvmTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.junit.jupiter)
+            implementation(libs.kotlinx.coroutines.test)
+            runtimeOnly(libs.junit.platform.launcher)
+        }
+    }
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
