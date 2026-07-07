@@ -5,17 +5,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import io.github.rotundtapir.cardkit.ui.generated.resources.Res
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.await
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.w3c.dom.Audio
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.set
 
 /**
- * Browser sound engine: each play spins up a short-lived `<audio>` element for the OGG one-shot
- * (they may overlap, matching SoundPool's multi-stream behaviour). At volume 0 nothing is created,
- * mirroring the Android actual's silent-context guarantee.
+ * Web Audio-backed browser actual. The OGG one-shots (wasm-only compose resources) are fetched
+ * and decoded into [AudioBuffer]s once, up front — per-play `<audio>` elements re-decode on every
+ * effect and lag noticeably. Each [play] is then a cheap buffer trigger; overlapping plays get
+ * their own source node, matching SoundPool's multi-stream behaviour.
+ *
+ * Browsers keep an [AudioContext] suspended until the page sees a user gesture; [play] calls
+ * `resume()` each time, so the first tap ("New Game") unlocks audio.
  */
 @OptIn(ExperimentalResourceApi::class)
 actual class SoundManager {
     actual var volume: Float = 0f
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val context = AudioContext()
+    private val buffers = mutableMapOf<String, AudioBuffer>()
 
     private val variants: Map<SoundEffect, List<String>> = mapOf(
         SoundEffect.CARD_PLACE to listOf("card_place_1", "card_place_2", "card_place_3"),
@@ -25,18 +39,36 @@ actual class SoundManager {
         SoundEffect.SCORE to listOf("score_chips"),
     )
 
+    init {
+        // Decode everything at construction (decoding is allowed while the context is suspended).
+        // ~9 small OGGs; done before the first deal finishes even on slow connections.
+        variants.values.flatten().forEach { name ->
+            scope.launch {
+                val bytes = Res.readBytes("files/$name.ogg")
+                val jsBytes = Int8Array(bytes.size)
+                for (i in bytes.indices) jsBytes[i] = bytes[i]
+                buffers[name] = context.decodeAudioData(jsBytes.buffer).await()
+            }
+        }
+    }
+
     actual fun play(effect: SoundEffect) {
         val v = volume.coerceIn(0f, 1f)
         if (v <= 0f) return
-        val audio = Audio(Res.getUri("files/${variants.getValue(effect).random()}.ogg"))
-        audio.volume = v.toDouble()
-        // Browsers reject playback until the page has seen a user gesture; a tap on "New Game"
-        // satisfies that, so just swallow the (expected) early rejections.
-        audio.play().catch { null }
+        if (context.state == "suspended") context.resume()
+        // Not decoded yet (first seconds of a cold page): drop the effect rather than queue stale audio.
+        val buffer = variants.getValue(effect).mapNotNull { buffers[it] }.randomOrNull() ?: return
+        val source = context.createBufferSource()
+        source.buffer = buffer
+        val gain = context.createGain()
+        gain.gain.value = v.toDouble()
+        source.connect(gain)
+        gain.connect(context.destination)
+        source.start()
     }
 
     actual fun release() {
-        // Nothing held between plays.
+        // The context and buffers live for the page; nothing held per play.
     }
 }
 
