@@ -46,7 +46,7 @@ boundaries — CI enforces them and they are the project's reason for existing.
 | Module | Platform | Role |
 | --- | --- | --- |
 | `cardkit-core` | KMP: jvm + wasmJs | authoritative game engine — card model, deck DSL, dealing, `GameRules`/`GameDriver`/`Player`. **Must not** touch `android.*`, AndroidX, Compose, or JVM-only APIs (keeps it server-runnable and browser-runnable). Tests in `src/jvmTest`. |
-| `cardkit-ui` | KMP/CMP: android + wasmJs | game-agnostic card-rendering Compose Multiplatform primitives (card PNGs as compose resources in `commonMain/composeResources`) + the card-table sound engine (`SoundEffect` + expect/actual `SoundManager`/`rememberSoundManager`: SoundPool + `res/raw` OGGs on Android, `<audio>` + wasm-only compose resources in the browser); `api`-depends on `cardkit-core`. |
+| `cardkit-ui` | KMP/CMP: android + wasmJs | game-agnostic card-rendering Compose Multiplatform primitives (card PNGs as compose resources in `commonMain/composeResources`) + the card-table sound engine (`SoundEffect` + expect/actual `SoundManager`/`rememberSoundManager`: SoundPool + `res/raw` OGGs on Android, Web Audio + wasm-only compose resources in the browser); `api`-depends on `cardkit-core`. |
 | `cardkit-monetization` | KMP/CMP: android + wasmJs | the `Monetization` interface (common; **no platform types in signatures** — implementations capture their host at construction) + no-op impls: `FossMonetization` (Android, donation link) and `BrowserMonetization` (wasm). **Zero proprietary deps.** |
 | `cardkit-monetization-play` | Android | the *only* module allowed to reference Google Mobile Ads / Play Billing / UMP. Consumed **only** by an app's `play` build flavor; structurally unreachable from wasm. |
 
@@ -72,7 +72,8 @@ consumers never see a GMS type.
   `SoundPool` lazily on the first audible play: at volume 0 no native audio is ever touched
   (instrumentation runs on `-no-audio` emulators crash otherwise), and `rememberSoundManager`
   shares one process-wide instance so activity recreation cannot churn native audio resources.
-  The wasm actual mirrors the volume-0-touches-nothing contract.
+  The wasm actual also skips playback at volume 0, but decodes its Web Audio buffers eagerly
+  at construction — the touch-no-audio-resources constraint is Android-only.
 
 ## Engine model (cardkit-core)
 

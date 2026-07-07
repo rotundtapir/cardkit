@@ -44,10 +44,14 @@ actual class SoundManager {
         // ~9 small OGGs; done before the first deal finishes even on slow connections.
         variants.values.flatten().forEach { name ->
             scope.launch {
-                val bytes = Res.readBytes("files/$name.ogg")
-                val jsBytes = Int8Array(bytes.size)
-                for (i in bytes.indices) jsBytes[i] = bytes[i]
-                buffers[name] = context.decodeAudioData(jsBytes.buffer).await()
+                // A failed fetch/decode leaves just this variant silent (play() already tolerates
+                // missing buffers); sound must never break the app.
+                runCatching {
+                    val bytes = Res.readBytes("files/$name.ogg")
+                    val jsBytes = Int8Array(bytes.size)
+                    for (i in bytes.indices) jsBytes[i] = bytes[i]
+                    buffers[name] = context.decodeAudioData(jsBytes.buffer).await()
+                }
             }
         }
     }

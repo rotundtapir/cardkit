@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import io.github.rotundtapir.cardkit.core.Joker
 import io.github.rotundtapir.cardkit.core.Rank
@@ -20,7 +21,9 @@ import io.github.rotundtapir.cardkit.core.SuitedCard
  */
 @Composable
 fun CardArtWarmup(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.size(1.dp).alpha(0f)) {
+    // clearAndSetSemantics: alpha hides pixels, not semantics — without it every warmed card
+    // shows up in the browser's accessibility tree as a phantom img before the real UI.
+    Box(modifier = modifier.size(1.dp).alpha(0f).clearAndSetSemantics {}) {
         CardBack(width = 1.dp)
         PlayingCard(Joker, width = 1.dp)
         Suit.entries.forEach { suit ->
