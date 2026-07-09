@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-cardkit-ads-exception
+// WildcardImport: the compose-resources `Res` facade is generated and accessed via a wildcard.
+@file:Suppress("WildcardImport")
+
 package io.github.rotundtapir.cardkit.ui
 
 import androidx.compose.foundation.Image
@@ -41,6 +44,9 @@ fun cardFaceShape(width: Dp): RoundedCornerShape = RoundedCornerShape(width * 0.
  * Card-face artwork: Byron Knoll's public-domain "Vector Playing Cards"
  * (https://code.google.com/archive/p/vector-playing-cards/), bundled as downscaled PNGs.
  */
+// An exhaustive card → bundled-artwork lookup: flagged as "complex" only because every rank of
+// every suit is one arm. It is a flat data mapping, not branching logic.
+@Suppress("CyclomaticComplexMethod", "LongMethod")
 private fun Card.faceRes(): DrawableResource = when (this) {
     Joker -> Res.drawable.card_red_joker
     is SuitedCard -> when (suit) {

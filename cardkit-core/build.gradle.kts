@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
 }
 
 // Pure Kotlin, no Android or proprietary dependency: the authoritative game engine runs on the
@@ -29,4 +30,16 @@ kotlin {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+// Coverage ratchet for the pure engine — currently ~93% line coverage; the bound sits just below
+// so it guards against regressions without becoming a chore. Measured from the jvm test run.
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(85)
+            }
+        }
+    }
 }

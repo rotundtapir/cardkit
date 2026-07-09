@@ -53,7 +53,7 @@ Requires JDK 21. Android modules additionally require the Android SDK.
 
 ## Git hooks
 
-A pre-commit hook runs `./gradlew lint test` so CI lint/test failures are caught
+A pre-commit hook runs `./gradlew qualityCheck lint jvmTest` so CI lint/test failures are caught
 locally. Enable it once per clone:
 
 ```bash

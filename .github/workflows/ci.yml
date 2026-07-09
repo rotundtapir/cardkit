@@ -31,13 +31,22 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Static analysis (detekt + CPD) and lint
+        run: ./gradlew qualityCheck lint
+
       - name: Build and test all modules
         run: ./gradlew build
 
-      - name: Upload test reports
+      - name: Coverage verification
+        run: ./gradlew :cardkit-core:koverVerify
+
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: '**/build/reports/tests/'
+          name: reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/detekt/
+            **/build/reports/cpd/
           if-no-files-found: ignore
