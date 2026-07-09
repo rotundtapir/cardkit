@@ -50,6 +50,10 @@ class StrategyPlayer<View, Action>(
  * (so the UI can render the choice) and then suspends until [submit] is called with the chosen action.
  */
 class ChannelPlayer<View, Action> : Player<View, Action> {
+    // replay = 1: an emit with no subscribers is otherwise dropped, so a UI that subscribes (or
+    // re-subscribes after activity recreation / a wasm remount) once the engine has already
+    // prompted would never see the pending prompt and the game would soft-lock.
+    // extraBufferCapacity = 1: emit() never suspends the engine against a slow collector.
     private val _prompts = MutableSharedFlow<View>(replay = 1, extraBufferCapacity = 1)
     private val responses = Channel<Action>(Channel.RENDEZVOUS)
 

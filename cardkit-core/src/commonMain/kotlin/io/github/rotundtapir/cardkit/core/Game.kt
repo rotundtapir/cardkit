@@ -51,12 +51,16 @@ class GameDriver<State, Action, View>(
     /**
      * Plays from [initial] until [GameRules.isTerminal]. [onState] is invoked with the initial state
      * and after every applied action, so a UI can observe progress. Returns the terminal state.
+     *
+     * @throws IllegalStateException if the rules report no actor for a non-terminal state — that is
+     *   a rules bug, and stopping quietly would hand back a non-terminal state as if the game ended.
      */
     suspend fun play(initial: State, onState: (State) -> Unit = {}): State {
         var state = initial
         onState(state)
         while (!rules.isTerminal(state)) {
-            val seat = rules.currentActor(state) ?: break
+            val seat = rules.currentActor(state)
+                ?: error("Rules reported no actor for a non-terminal state: $state")
             val player = players[seat]
                 ?: error("No player registered for $seat")
             val action = player.decide(rules.view(state, seat))

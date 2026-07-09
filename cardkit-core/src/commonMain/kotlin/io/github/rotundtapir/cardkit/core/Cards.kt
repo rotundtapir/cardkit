@@ -37,6 +37,9 @@ enum class Rank(val label: String, val code: Char) {
     EIGHT("8", '8'),
     NINE("9", '9'),
     TEN("10", 'T'),
+    // Single-char codes must stay unique for fromCode/Card.parse; 'T' is taken by TEN, so each
+    // extended rank uses a distinctive letter from its word (elEven, tWelve, thiRteen). Card.code
+    // is documented as stable — treat these as a fixed alphabet.
     ELEVEN("11", 'E'),
     TWELVE("12", 'W'),
     THIRTEEN("13", 'R'),

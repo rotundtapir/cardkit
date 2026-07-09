@@ -63,10 +63,13 @@ val ranksTwoToAce: List<Rank> = Rank.entries.filter { it !in extendedRanks }
 /**
  * Inclusive rank range in enum (strength) order, e.g. `Rank.FOUR..Rank.ACE`. Note this follows raw
  * enum order, so a range spanning TEN..JACK includes the [extendedRanks] declared between them —
- * subtract [extendedRanks] for a classic-deck range.
+ * subtract [extendedRanks] for a classic-deck range. The range must run low to high: a reversed
+ * pair (a likely deck-definition typo) fails instead of silently producing a short deck.
  */
-operator fun Rank.rangeTo(other: Rank): List<Rank> =
-    Rank.entries.subList(this.ordinal, other.ordinal + 1)
+operator fun Rank.rangeTo(other: Rank): List<Rank> {
+    require(ordinal <= other.ordinal) { "Reversed rank range: $this..$other" }
+    return Rank.entries.subList(this.ordinal, other.ordinal + 1)
+}
 
 /** A standard 52-card deck, optionally with [jokers] added. */
 fun standardDeck(jokers: Int = 0): List<Card> = buildDeck {
