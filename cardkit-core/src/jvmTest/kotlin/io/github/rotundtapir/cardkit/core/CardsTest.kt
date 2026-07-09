@@ -25,6 +25,20 @@ class CardsTest {
     }
 
     @Test
+    fun `labels are the exact UI test-tag alphabet the instrumented and e2e suites key on`() {
+        // These strings are load-bearing: both suites locate cards by "card:<label>". Pin one
+        // court card, the two-char ten, every suit symbol, an extended rank, and the Joker.
+        assertEquals("Q♣", (Rank.QUEEN of Suit.CLUBS).label)
+        assertEquals("K♦", (Rank.KING of Suit.DIAMONDS).label)
+        assertEquals("J♠", (Rank.JACK of Suit.SPADES).label)
+        assertEquals("10♥", (Rank.TEN of Suit.HEARTS).label)
+        assertEquals("11♠", (Rank.ELEVEN of Suit.SPADES).label)
+        assertEquals("12♥", (Rank.TWELVE of Suit.HEARTS).label)
+        assertEquals("13♦", (Rank.THIRTEEN of Suit.DIAMONDS).label)
+        assertEquals("Joker", Joker.label)
+    }
+
+    @Test
     fun `parse round-trips every card in a standard deck plus joker`() {
         for (card in standardDeck(jokers = 1)) {
             assertEquals(card, Card.parse(card.code), "round-trip failed for ${card.code}")
