@@ -25,6 +25,20 @@ enum class SoundEffect {
 }
 
 /**
+ * Each effect's variant file base names — the single table both platform actuals translate into
+ * their resource form (`res/raw` ids on Android, wasm compose-resource paths). Exhaustive by
+ * construction: adding a [SoundEffect] without variants fails to compile.
+ */
+internal val SoundEffect.variantNames: List<String>
+    get() = when (this) {
+        SoundEffect.CARD_PLACE -> listOf("card_place_1", "card_place_2", "card_place_3")
+        SoundEffect.CARD_SLIDE -> listOf("card_slide_1", "card_slide_2")
+        SoundEffect.SHUFFLE -> listOf("card_shuffle")
+        SoundEffect.TRICK_TAKEN -> listOf("trick_take_1", "trick_take_2")
+        SoundEffect.SCORE -> listOf("score_chips")
+    }
+
+/**
  * A small platform-backed effect player. [play] picks a random variant where an effect has
  * several. [volume] is 0f..1f — at 0 the play is skipped entirely (no audio resource is even
  * touched). Call [release] when done, or share one instance per process via [rememberSoundManager].

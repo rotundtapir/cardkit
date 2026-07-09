@@ -31,18 +31,11 @@ actual class SoundManager {
     private val context = AudioContext()
     private val buffers = mutableMapOf<String, AudioBuffer>()
 
-    private val variants: Map<SoundEffect, List<String>> = mapOf(
-        SoundEffect.CARD_PLACE to listOf("card_place_1", "card_place_2", "card_place_3"),
-        SoundEffect.CARD_SLIDE to listOf("card_slide_1", "card_slide_2"),
-        SoundEffect.SHUFFLE to listOf("card_shuffle"),
-        SoundEffect.TRICK_TAKEN to listOf("trick_take_1", "trick_take_2"),
-        SoundEffect.SCORE to listOf("score_chips"),
-    )
-
     init {
         // Decode everything at construction (decoding is allowed while the context is suspended).
-        // ~9 small OGGs; done before the first deal finishes even on slow connections.
-        variants.values.flatten().forEach { name ->
+        // ~9 small OGGs; done before the first deal finishes even on slow connections. Variant
+        // lists come from the shared SoundEffect.variantNames table.
+        SoundEffect.entries.flatMap { it.variantNames }.forEach { name ->
             scope.launch {
                 // A failed fetch/decode leaves just this variant silent (play() already tolerates
                 // missing buffers); sound must never break the app.
@@ -61,7 +54,7 @@ actual class SoundManager {
         if (v <= 0f) return
         if (context.state == "suspended") context.resume()
         // Not decoded yet (first seconds of a cold page): drop the effect rather than queue stale audio.
-        val buffer = variants.getValue(effect).mapNotNull { buffers[it] }.randomOrNull() ?: return
+        val buffer = effect.variantNames.mapNotNull { buffers[it] }.randomOrNull() ?: return
         val source = context.createBufferSource()
         source.buffer = buffer
         val gain = context.createGain()

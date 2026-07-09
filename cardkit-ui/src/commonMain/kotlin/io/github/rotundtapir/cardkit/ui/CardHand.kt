@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,15 +21,16 @@ import kotlin.math.roundToInt
  *
  * Cards that are not [playable] are not clickable and (when [dimUnplayable]) dimmed with an opaque
  * scrim — never translucency, which would let overlapped cards bleed through. A card in [selected]
- * is lifted upward; the layout reserves headroom so the lift is not clipped. Overlap is expressed as
- * a fraction of card width (0 = fully stacked, 1 = fully separated).
+ * is lifted upward; the layout reserves headroom so the lift is not clipped. [exposure] is the
+ * fraction of card width each card advances past the previous one — the visible strip — so 0 is
+ * fully stacked and 1 fully separated.
  */
 @Composable
 fun CardHand(
     cards: List<Card>,
     modifier: Modifier = Modifier,
     cardWidth: Dp = DefaultCardWidth,
-    overlap: Float = 0.5f,
+    exposure: Float = 0.5f,
     liftHeight: Dp = 16.dp,
     playable: (Card) -> Boolean = { true },
     dimUnplayable: Boolean = true,
@@ -48,9 +48,7 @@ fun CardHand(
                 Box(
                     modifier = Modifier
                         .graphicsLayer { translationY = lift * density }
-                        .then(
-                            if (enabled) Modifier.clickable { onCardClick(card) } else Modifier
-                        )
+                        .clickableWhen(enabled) { onCardClick(card) }
                         .then(cardModifier(card)),
                 ) {
                     PlayingCard(card, width = cardWidth)
@@ -59,7 +57,7 @@ fun CardHand(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .clip(RoundedCornerShape(cardWidth * 0.08f))
+                                .clip(cardFaceShape(cardWidth))
                                 .background(Color(0x8FFAFAFA)),
                         )
                     }
@@ -72,7 +70,7 @@ fun CardHand(
         if (placeables.isEmpty()) return@Layout layout(0, 0) {}
 
         val cw = placeables.first().width
-        val step = (cw * overlap).roundToInt().coerceAtLeast(1)
+        val step = (cw * exposure).roundToInt().coerceAtLeast(1)
         val width = cw + step * (placeables.size - 1)
         val liftPx = liftHeight.roundToPx()
         val height = placeables.maxOf { it.height } + liftPx
@@ -84,3 +82,10 @@ fun CardHand(
         }
     }
 }
+
+/**
+ * Clickable only while [enabled] — a factory rather than a conditional `.then(if …)` chain, which
+ * crashes AGP lint's SuspiciousModifierThenDetector (see the consuming repo's CLAUDE.md).
+ */
+private fun Modifier.clickableWhen(enabled: Boolean, onClick: () -> Unit): Modifier =
+    if (enabled) this.clickable(onClick = onClick) else this

@@ -14,6 +14,14 @@ actual class SoundManager(context: Context) {
     private val appContext = context.applicationContext
 
     actual var volume: Float = 0f
+        set(value) {
+            field = value
+            // Warm the pool the moment audio is enabled: SoundPool.load() is asynchronous, and a
+            // play() against a still-loading sample is silently dropped ("sample not READY"), so
+            // creating the pool lazily on the first PLAY would swallow that first effect. At 0
+            // nothing is created — the -no-audio instrumentation invariant below.
+            if (value > 0f) ensurePool()
+        }
 
     // The SoundPool is created lazily on the FIRST audible play: at volume 0 (e.g. instrumentation
     // runs on a -no-audio emulator, where native playback is flaky enough to kill the process) no
@@ -32,13 +40,11 @@ actual class SoundManager(context: Context) {
         .build()
         .also { pool ->
             soundPool = pool
-            soundIds = mapOf(
-                SoundEffect.CARD_PLACE to listOf(R.raw.card_place_1, R.raw.card_place_2, R.raw.card_place_3),
-                SoundEffect.CARD_SLIDE to listOf(R.raw.card_slide_1, R.raw.card_slide_2),
-                SoundEffect.SHUFFLE to listOf(R.raw.card_shuffle),
-                SoundEffect.TRICK_TAKEN to listOf(R.raw.trick_take_1, R.raw.trick_take_2),
-                SoundEffect.SCORE to listOf(R.raw.score_chips),
-            ).mapValues { (_, resources) -> resources.map { pool.load(appContext, it, 1) } }
+            // Variant lists come from the shared SoundEffect.variantNames table; only the
+            // name -> res/raw id translation is platform-local.
+            soundIds = SoundEffect.entries.associateWith { effect ->
+                effect.variantNames.map { pool.load(appContext, rawRes(it), 1) }
+            }
         }
 
     actual fun play(effect: SoundEffect) {
@@ -46,6 +52,19 @@ actual class SoundManager(context: Context) {
         if (v <= 0f) return
         val pool = ensurePool()
         pool.play(soundIds.getValue(effect).random(), v, v, 1, 0, 1f)
+    }
+
+    private fun rawRes(name: String): Int = when (name) {
+        "card_place_1" -> R.raw.card_place_1
+        "card_place_2" -> R.raw.card_place_2
+        "card_place_3" -> R.raw.card_place_3
+        "card_slide_1" -> R.raw.card_slide_1
+        "card_slide_2" -> R.raw.card_slide_2
+        "card_shuffle" -> R.raw.card_shuffle
+        "trick_take_1" -> R.raw.trick_take_1
+        "trick_take_2" -> R.raw.trick_take_2
+        "score_chips" -> R.raw.score_chips
+        else -> error("No res/raw resource mapped for sound variant '$name'")
     }
 
     actual fun release() {

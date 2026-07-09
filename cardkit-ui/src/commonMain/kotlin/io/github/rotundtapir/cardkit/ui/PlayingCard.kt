@@ -25,15 +25,17 @@ import io.github.rotundtapir.cardkit.ui.generated.resources.*
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-/** Default aspect-correct playing-card width. Height is derived as 1.4×. */
+/** Default aspect-correct playing-card width. Height is derived as [CardAspectRatio]. */
 val DefaultCardWidth: Dp = 64.dp
 
-/** Stable human-readable label, e.g. "10♥" or "Joker" — also used as the card's UI-test tag. */
-val Card.displayLabel: String
-    get() = when (this) {
-        is SuitedCard -> rank.label + suit.symbol
-        Joker -> "Joker"
-    }
+/** Height:width ratio of a playing card; use it wherever card geometry is mirrored. */
+const val CardAspectRatio = 1.4f
+
+/**
+ * The rounded-corner shape of a card face at [width]. Shared so overlays that must clip to the
+ * face (e.g. [CardHand]'s unplayable scrim) stay in step if the radius ever changes.
+ */
+fun cardFaceShape(width: Dp): RoundedCornerShape = RoundedCornerShape(width * 0.08f)
 
 /**
  * Card-face artwork: Byron Knoll's public-domain "Vector Playing Cards"
@@ -127,18 +129,18 @@ fun PlayingCard(
     modifier: Modifier = Modifier,
     width: Dp = DefaultCardWidth,
 ) {
-    val height = width * 1.4f
+    val height = width * CardAspectRatio
     Box(
         modifier = modifier
             .size(width, height)
-            .clip(RoundedCornerShape(width * 0.08f))
+            .clip(cardFaceShape(width))
             .background(Color(0xFFFAFAFA))
-            .border(1.dp, Color(0x33000000), RoundedCornerShape(width * 0.08f))
-            .testTag("card:${card.displayLabel}"),
+            .border(1.dp, Color(0x33000000), cardFaceShape(width))
+            .testTag("card:${card.label}"),
     ) {
         Image(
             painter = painterResource(card.faceRes()),
-            contentDescription = card.displayLabel,
+            contentDescription = card.label,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize(),
         )
@@ -154,7 +156,7 @@ fun CardBack(
     modifier: Modifier = Modifier,
     width: Dp = DefaultCardWidth,
 ) {
-    val height = width * 1.4f
+    val height = width * CardAspectRatio
     Box(
         modifier = modifier
             .size(width, height)
