@@ -23,8 +23,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.ui)
+            // api: Monetization's public surface exposes @Composable and Modifier (and StateFlow
+            // below), so consumers must see these types without declaring them independently.
+            api(compose.runtime)
+            api(compose.ui)
             api(libs.kotlinx.coroutines.core)
         }
         wasmJsMain.dependencies {

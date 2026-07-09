@@ -2,6 +2,8 @@
 package io.github.rotundtapir.cardkit.monetization.play
 
 import android.app.Activity
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -84,6 +86,10 @@ class PlayMonetization(
     private var interstitial: InterstitialAd? = null
     private var removeAdsProduct: ProductDetails? = null
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var reconnectDelayMillis = INITIAL_RECONNECT_DELAY_MILLIS
+    private var disposed = false
+
     private val billingClient: BillingClient = BillingClient.newBuilder(appContext)
         .setListener(this)
         .enablePendingPurchases(
@@ -155,18 +161,35 @@ class PlayMonetization(
     // --- Billing ---------------------------------------------------------------------------------
 
     private fun connectBilling() {
+        // Guard against overlapping attempts (a user tap racing a scheduled reconnect).
+        val state = billingClient.connectionState
+        if (state == BillingClient.ConnectionState.CONNECTING ||
+            state == BillingClient.ConnectionState.CONNECTED
+        ) {
+            return
+        }
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                    reconnectDelayMillis = INITIAL_RECONNECT_DELAY_MILLIS
                     queryRemoveAdsProduct()
                     refreshPurchases()
                 }
             }
 
             override fun onBillingServiceDisconnected() {
-                // A production app would back off and retry; kept minimal here.
+                // Play Billing drops connections routinely (e.g. the Play Store self-updating);
+                // without a reconnect, no query or purchase works again for the session.
+                scheduleBillingReconnect()
             }
         })
+    }
+
+    /** Capped exponential backoff; cancelled by [dispose] so no timer fires on a dead client. */
+    private fun scheduleBillingReconnect() {
+        if (disposed) return
+        mainHandler.postDelayed({ if (!disposed) connectBilling() }, reconnectDelayMillis)
+        reconnectDelayMillis = (reconnectDelayMillis * 2).coerceAtMost(MAX_RECONNECT_DELAY_MILLIS)
     }
 
     private fun queryRemoveAdsProduct() {
@@ -191,31 +214,42 @@ class PlayMonetization(
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
         billingClient.queryPurchasesAsync(params) { _, purchases ->
-            if (purchases.any { it.isRemoveAds() && it.purchaseState == Purchase.PurchaseState.PURCHASED }) {
-                _adsRemoved.value = true
-            }
+            purchases.forEach(::grantIfRemoveAds)
         }
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: MutableList<Purchase>?) {
         if (result.responseCode != BillingClient.BillingResponseCode.OK || purchases == null) return
-        for (purchase in purchases) {
-            if (purchase.isRemoveAds() && purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                _adsRemoved.value = true
-                if (!purchase.isAcknowledged) {
-                    val ack = AcknowledgePurchaseParams.newBuilder()
-                        .setPurchaseToken(purchase.purchaseToken)
-                        .build()
-                    billingClient.acknowledgePurchase(ack) { }
-                }
-            }
+        purchases.forEach(::grantIfRemoveAds)
+    }
+
+    /**
+     * Grants remove-ads for a PURCHASED [purchase] of the configured product, acknowledging it if
+     * needed. Acknowledgement must also happen on the refresh path, not just onPurchasesUpdated:
+     * if the original ack failed (network, process death) or a pending purchase completed while
+     * the app was closed, Google auto-refunds an unacknowledged purchase after 3 days.
+     */
+    private fun grantIfRemoveAds(purchase: Purchase) {
+        if (!purchase.isRemoveAds() || purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
+        _adsRemoved.value = true
+        if (!purchase.isAcknowledged) {
+            val ack = AcknowledgePurchaseParams.newBuilder()
+                .setPurchaseToken(purchase.purchaseToken)
+                .build()
+            billingClient.acknowledgePurchase(ack) { }
         }
     }
 
     private fun Purchase.isRemoveAds(): Boolean = products.contains(config.removeAdsProductId)
 
     override fun launchRemoveAdsOrDonate() {
-        val product = removeAdsProduct ?: return
+        val product = removeAdsProduct ?: run {
+            // Product details never arrived (billing was down when queried). Kick the connection
+            // so a later tap can succeed; there is nothing to show for this one.
+            connectBilling()
+            if (billingClient.isReady) queryRemoveAdsProduct()
+            return
+        }
         val flowParams = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(
                 listOf(
@@ -244,6 +278,9 @@ class PlayMonetization(
                     loadAd(AdRequest.Builder().build())
                 }
             },
+            // AdView is WebView-backed; skipping destroy() leaks its native resources for the
+            // process lifetime once the slot leaves composition (e.g. remove-ads mid-session).
+            onRelease = { it.destroy() },
         )
     }
 
@@ -274,9 +311,18 @@ class PlayMonetization(
             onDismissed()
             return
         }
+        // Exactly-once guard: since GMA v21 a failed show can invoke BOTH
+        // onAdFailedToShowFullScreenContent and onAdDismissedFullScreenContent, and callers hold
+        // game flow on this continuation (the Monetization contract promises one invocation).
+        var fired = false
+        fun fireOnDismissed() {
+            if (fired) return
+            fired = true
+            onDismissed()
+        }
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() = onDismissed()
-            override fun onAdFailedToShowFullScreenContent(error: AdError) = onDismissed()
+            override fun onAdDismissedFullScreenContent() = fireOnDismissed()
+            override fun onAdFailedToShowFullScreenContent(error: AdError) = fireOnDismissed()
         }
         ad.show(activity)
         interstitial = null
@@ -284,7 +330,14 @@ class PlayMonetization(
     }
 
     override fun dispose() {
+        disposed = true
+        mainHandler.removeCallbacksAndMessages(null) // no reconnect may fire on a dead client
         interstitial = null
         if (billingClient.isReady) billingClient.endConnection()
+    }
+
+    private companion object {
+        const val INITIAL_RECONNECT_DELAY_MILLIS = 1_000L
+        const val MAX_RECONNECT_DELAY_MILLIS = 60_000L
     }
 }
