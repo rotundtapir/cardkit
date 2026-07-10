@@ -32,7 +32,8 @@ Commits without a sign-off will not be merged.
 
 - **`cardkit-core`** is a pure Kotlin/JVM module. It **must not** depend on any
   Android API (`android.*`, AndroidX, Compose). This keeps the game engine
-  reusable on a server for future online multiplayer. CI enforces this.
+  reusable on a server — which the 500 app's online multiplayer now does. CI
+  enforces this.
 - **`cardkit-core` and `cardkit-ui` must not** reference the Google Mobile Ads
   SDK, Play Billing, Firebase, or any other proprietary dependency. All such
   code lives only in `cardkit-monetization-play`. This is what keeps F-Droid

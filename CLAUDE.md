@@ -90,7 +90,8 @@ The engine is a pure state machine, deliberately transport- and framework-agnost
 - **`Player<View, Action>`** is the key seam. `decide` is `suspend` so human/network
   latency needs no engine change. Implementations: `StrategyPlayer` (wraps a
   synchronous AI `Strategy`), `ChannelPlayer` (suspends until a human `submit`s via UI),
-  and a future `RemotePlayer`.
+  and a networked player for remote seats — realized in the 500 app's online server
+  (its own `:net`/`:server` modules; a generic version isn't in cardkit yet).
 - **Determinism**: shuffling and AI take a seeded `kotlin.random.Random`
   (`shuffleWith`, `shuffleAndDeal`, `Strategy.decide(view, random)`), so games are
   reproducible and unit-testable. Keep new engine logic deterministic.

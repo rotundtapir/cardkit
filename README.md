@@ -16,7 +16,8 @@ game app only has to implement its own rules and screens:
 ## Design principles
 
 - **`cardkit-core` has no Android dependency.** The authoritative game engine is
-  pure Kotlin so it can also run server-side when online multiplayer is added.
+  pure Kotlin so it can also run server-side — as the 500 app's online multiplayer
+  now does, driving the engine from a hosted server over WebSockets.
 - **Proprietary code is quarantined** in `cardkit-monetization-play`. Everything
   else is free of Google Mobile Ads / Play Billing / Firebase, so a game app's
   free/libre (F-Droid) flavor can exclude that one module and contain zero
