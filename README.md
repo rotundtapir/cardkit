@@ -53,7 +53,7 @@ dependencies {
 ```
 
 `cardkit-core` builds with only a JDK. The Android modules require the Android
-SDK (`compileSdk 35`).
+SDK (`compileSdk 36`).
 
 ## Artwork
 
