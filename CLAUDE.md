@@ -59,11 +59,16 @@ consumers never see a GMS type.
 
 ## Monetization seams (hard-won invariants)
 
-- **Consent before ads.** `PlayMonetization` gathers UMP/GDPR consent on construction and only
-  initialises the Mobile Ads SDK — and loads any ad — once `canRequestAds()` holds. Consent
-  failures (offline, misconfiguration) must never block the app: ads just stay off. `Config` has
-  debug knobs (`consentDebugGeographyEea`, `consentTestDeviceHashedIds`); note debug geography
-  only applies on test devices (emulators qualify automatically, physical phones must be added).
+- **Billing before consent before ads.** `PlayMonetization` checks the `remove_ads` entitlement
+  first: a cached purchase (SharedPreferences) skips UMP consent and the Mobile Ads SDK entirely —
+  a paying user's device never talks to ad servers. With no cache, consent waits up to 2 s for
+  Play Billing's verdict ("owned" cancels the ads path, covering reinstalls; "not owned" or the
+  timeout lets it proceed, so non-payers are never blocked on billing). Only then is consent
+  gathered, and the Mobile Ads SDK initialised — and ads loaded — once `canRequestAds()` holds.
+  Consent failures (offline, misconfiguration) must never block the app: ads just stay off.
+  `Config` has debug knobs (`consentDebugGeographyEea`, `consentTestDeviceHashedIds`); note debug
+  geography only applies on test devices (emulators qualify automatically, physical phones must
+  be added).
 - **`maybeShowInterstitial(onDismissed)`**: the continuation fires when the ad closes
   — or immediately when nothing shows (FOSS, ads removed, none loaded, show failure). Callers
   rely on it to hold game flow (deal animations, bot turns) while an ad owns the screen; every
