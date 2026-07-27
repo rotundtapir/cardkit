@@ -29,7 +29,9 @@ class LocalStorageKeyValueStore(private val prefix: String) : KeyValueStore {
         flowFor(key).value = value
     }
 
-    override fun boolean(key: String): Flow<Boolean?> = string(key).map { it?.toBoolean() }
+    // Strict parse: a corrupted/foreign value falls back to the caller's default (null), matching
+    // the Android store's behavior for a wrong-typed preference — not silently to `false`.
+    override fun boolean(key: String): Flow<Boolean?> = string(key).map { it?.toBooleanStrictOrNull() }
 
     override suspend fun putBoolean(key: String, value: Boolean) = putString(key, value.toString())
 
