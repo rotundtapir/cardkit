@@ -149,8 +149,11 @@ fun TutorialPagesDialog(
     narrationUriFor: (String) -> String? = { null },
 ) {
     var page by rememberSaveable { mutableIntStateOf(0) }
-    val onLastPage = page == pages.lastIndex
-    NarrateEffect(narration, pages[page].body, narrationUriFor)
+    // A saveable index can outlive its list: if a restore pairs an old index with a shorter page
+    // list, clamp instead of throwing on the first frame.
+    val current = page.coerceIn(0, pages.lastIndex)
+    val onLastPage = current == pages.lastIndex
+    NarrateEffect(narration, pages[current].body, narrationUriFor)
     CardFaceDialog(
         onDismissRequest = { onDismiss?.invoke() },
         modifier = modifier,
@@ -162,19 +165,19 @@ fun TutorialPagesDialog(
             // the tallest — nothing clips on narrow phones or large font scales, and the chrome
             // never jumps. Otherwise a simple minimum height.
             if (uniformBodyHeight) {
-                TallestPageBody(pages, page)
+                TallestPageBody(pages, current)
             } else {
-                Column(Modifier.heightIn(min = 180.dp)) { PageBody(pages[page]) }
+                Column(Modifier.heightIn(min = 180.dp)) { PageBody(pages[current]) }
             }
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                PageDots(pages.size, page)
+                PageDots(pages.size, current)
                 if (narration != null) {
                     NarrationToggle(narration, compact = true, tint = InkOnCardSurface)
                 }
                 Spacer(Modifier.weight(1f))
                 when {
-                    page > 0 -> ReaderTextButton("Back", onClick = { page-- })
+                    current > 0 -> ReaderTextButton("Back", onClick = { page = current - 1 })
                     onDismiss != null -> ReaderTextButton("Cancel", onClick = onDismiss)
                 }
                 if (onLastPage) {
@@ -187,7 +190,7 @@ fun TutorialPagesDialog(
                 } else {
                     ReaderTextButton(
                         "Next",
-                        onClick = { page++ },
+                        onClick = { page = current + 1 },
                         emphasized = true,
                         modifier = Modifier.testTag(nextTag),
                     )
