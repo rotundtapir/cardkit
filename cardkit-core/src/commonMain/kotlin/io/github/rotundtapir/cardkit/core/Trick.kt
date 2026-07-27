@@ -12,7 +12,10 @@ data class TrickPlay(val seat: Seat, val card: Card, val nominated: Suit? = null
 
 /** How the Joker ranks in tricks, for games that include it in the deck. */
 enum class JokerRole {
-    /** Not in the deck (standard Euchre). A stray Joker is never trump and cannot win a trick. */
+    /**
+     * Not in the deck (standard Euchre). A stray Joker — possible only in a malformed or sampled
+     * world — is never trump and loses to every real card, leading included.
+     */
     ABSENT,
 
     /** The highest trump, above the right bower (500 suit contracts, Euchre's "Benny"). */
@@ -54,6 +57,12 @@ class TrickEvaluator(
     val bowersEnabled: Boolean = true,
 ) {
 
+    init {
+        require(jokerRole != JokerRole.SOLE_TRUMP || trumpSuit == null) {
+            "SOLE_TRUMP means there is no trump suit; got trumpSuit=$trumpSuit"
+        }
+    }
+
     fun isRightBower(card: Card): Boolean =
         bowersEnabled && trumpSuit != null && card is SuitedCard &&
             card.rank == Rank.JACK && card.suit == trumpSuit
@@ -87,26 +96,27 @@ class TrickEvaluator(
      * A comparable strength for [card] within a trick whose led suit is [ledSuit]. Higher wins; a
      * card that cannot win (off-suit and non-trump) scores below every eligible card.
      */
-    fun strength(card: Card, ledSuit: Suit?): Int {
-        if (trumpSuit != null) {
-            if (isTrump(card)) {
-                return when {
-                    card is Joker -> 1000
-                    isRightBower(card) -> 900
-                    isLeftBower(card) -> 800
-                    card is SuitedCard -> 100 + card.rank.ordinal
-                    else -> 100
-                }
-            }
-            // Non-trump card: only wins if it is of the led suit.
-            return if (card is SuitedCard && card.suit == ledSuit) card.rank.ordinal else -1
-        }
-        // No trump suit: only a sole-trump Joker beats the led suit.
-        return when {
-            card is Joker && jokerRole == JokerRole.SOLE_TRUMP -> 1000
-            card is SuitedCard && card.suit == ledSuit -> card.rank.ordinal
-            else -> -1
-        }
+    fun strength(card: Card, ledSuit: Suit?): Int = when {
+        card is Joker -> jokerStrength()
+        trumpSuit != null && isTrump(card) -> trumpStrength(card)
+        // Non-trump card: only wins if it is of the led suit.
+        card is SuitedCard && card.suit == ledSuit -> card.rank.ordinal
+        else -> -1
+    }
+
+    private fun jokerStrength(): Int = when {
+        // An ABSENT joker must lose to every real card even when it *leads* (making ledSuit null,
+        // which scores every off-suit follow -1 and would otherwise hand it the maxBy tie-break).
+        jokerRole == JokerRole.ABSENT -> -2
+        jokerRole == JokerRole.SOLE_TRUMP || trumpSuit != null -> 1000
+        else -> -1 // HIGHEST_TRUMP with no trump suit: incoherent, treat as unwinnable
+    }
+
+    private fun trumpStrength(card: Card): Int = when {
+        isRightBower(card) -> 900
+        isLeftBower(card) -> 800
+        card is SuitedCard -> 100 + card.rank.ordinal
+        else -> 100
     }
 
     /**

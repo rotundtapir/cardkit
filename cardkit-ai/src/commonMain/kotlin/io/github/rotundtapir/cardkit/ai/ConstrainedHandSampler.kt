@@ -45,6 +45,11 @@ class ConstrainedHandSampler(
             fixedHands.values.forEach(::addAll)
         }
         val pool = ArrayDeque(deck.filterNot { it in known }.shuffled(random))
+        val needed = handSizes.filterKeys { it !in fixedHands }.values.sum()
+        require(needed <= pool.size) {
+            "Cannot deal $needed hidden cards: deck has ${deck.size}, ${known.size} known/fixed, " +
+                "leaving ${pool.size} — the caller's view/tracker bookkeeping is inconsistent"
+        }
         val hands = mutableMapOf<Seat, MutableList<Card>>()
         fixedHands.forEach { (seat, cards) -> hands[seat] = cards.toMutableList() }
         handSizes.keys.sortedBy { it.index }
