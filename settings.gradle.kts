@@ -56,6 +56,7 @@ dependencyResolutionManagement {
 rootProject.name = "cardkit"
 
 include(":cardkit-core")
+include(":cardkit-ai")
 include(":cardkit-ui")
 include(":cardkit-monetization")
 include(":cardkit-monetization-play")
