@@ -39,6 +39,14 @@ kotlin {
         wasmJsMain.dependencies {
             implementation(libs.kotlinx.browser)
         }
+        // Local JVM unit tests against the android target (no emulator): the pacing gates, sound
+        // triggers, speech-text expansion and the settings-storage seam use no Android framework
+        // APIs (DataStore runs on a plain JVM against a temp file).
+        androidUnitTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.androidx.datastore.preferences)
+        }
     }
 }
 
