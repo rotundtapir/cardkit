@@ -24,6 +24,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":cardkit-core"))
+            // StateFlow appears in public signatures (PacingGates), so consumers need it on their
+            // compile classpath: api, not implementation.
+            api(libs.kotlinx.coroutines.core)
             api(compose.foundation)
             api(compose.material3)
             api(compose.ui)
