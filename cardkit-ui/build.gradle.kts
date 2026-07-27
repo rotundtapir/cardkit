@@ -32,6 +32,10 @@ kotlin {
             api(compose.ui)
             implementation(compose.components.resources)
         }
+        androidMain.dependencies {
+            // Backs DataStoreKeyValueStore only; never in a public signature, so implementation.
+            implementation(libs.androidx.datastore.preferences)
+        }
         wasmJsMain.dependencies {
             implementation(libs.kotlinx.browser)
         }
