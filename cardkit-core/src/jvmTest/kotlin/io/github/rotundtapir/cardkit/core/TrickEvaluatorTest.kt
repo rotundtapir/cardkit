@@ -203,9 +203,22 @@ class TrickEvaluatorTest {
         assertFalse(euchreSpades.isTrump(Joker))
         assertEquals(null, euchreSpades.effectiveSuit(Joker))
         // Defensive: a stray Joker in a sampled world loses to everything rather than crashing.
-        assertEquals(-1, euchreSpades.strength(Joker, Suit.SPADES))
+        assertTrue(euchreSpades.strength(Joker, Suit.SPADES) < -1)
         val trick = listOf(play(0, Rank.NINE of Suit.HEARTS), play(1, Joker))
         assertEquals(Seat(0), euchreSpades.winner(trick))
+    }
+
+    @Test
+    fun `an absent joker loses even when it leads`() {
+        // Leading it makes the led suit null, scoring every follow -1 — the joker must sit below
+        // that so the maxBy tie-break can never hand it the trick.
+        val trick = listOf(play(0, Joker), play(1, Rank.NINE of Suit.HEARTS))
+        assertEquals(Seat(1), euchreSpades.winner(trick))
+    }
+
+    @Test
+    fun `a sole-trump evaluator rejects a trump suit`() {
+        assertFailsWith<IllegalArgumentException> { TrickEvaluator(Suit.SPADES, JokerRole.SOLE_TRUMP) }
     }
 
     @Test

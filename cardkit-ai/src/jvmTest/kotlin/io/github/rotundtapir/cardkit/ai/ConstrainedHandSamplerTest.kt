@@ -92,6 +92,22 @@ class ConstrainedHandSamplerTest {
     }
 
     @Test
+    fun `demanding more cards than remain is an immediate, attributable error`() {
+        val tiny = ConstrainedHandSampler(listOf(Rank.ACE of Suit.HEARTS, Rank.KING of Suit.HEARTS))
+        val failure = kotlin.test.assertFailsWith<IllegalArgumentException> {
+            tiny.sample(
+                fixedHands = emptyMap(),
+                handSizes = mapOf(Seat(0) to 2, Seat(1) to 2),
+                knownGone = setOf(Rank.ACE of Suit.HEARTS),
+                voids = emptyMap(),
+                eval = null,
+                random = Random(1),
+            )
+        }
+        assertTrue("deck has 2" in failure.message.orEmpty())
+    }
+
+    @Test
     fun `irreparable voids still produce size-correct replayable hands`() {
         // Every unknown card is a heart-or-spade world: make seats void in both red suits with a
         // tiny deck so repair cannot fully succeed, and check structure survives.
