@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH LicenseRef-cardkit-ads-exception
 package io.github.rotundtapir.cardkit.ui.settings
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
@@ -15,31 +13,9 @@ import kotlin.test.assertEquals
  */
 class KeyValueSettingsTest {
 
-    /** In-memory store mirroring the web store's shape (per-key state flows over a string map). */
-    private class FakeStore : KeyValueStore {
-        val strings = mutableMapOf<String, MutableStateFlow<String?>>()
-        val booleans = mutableMapOf<String, MutableStateFlow<Boolean?>>()
-        val floats = mutableMapOf<String, MutableStateFlow<Float?>>()
-
-        override fun string(key: String): Flow<String?> = strings.getOrPut(key) { MutableStateFlow(null) }
-        override suspend fun putString(key: String, value: String) {
-            strings.getOrPut(key) { MutableStateFlow(null) }.value = value
-        }
-
-        override fun boolean(key: String): Flow<Boolean?> = booleans.getOrPut(key) { MutableStateFlow(null) }
-        override suspend fun putBoolean(key: String, value: Boolean) {
-            booleans.getOrPut(key) { MutableStateFlow(null) }.value = value
-        }
-
-        override fun float(key: String): Flow<Float?> = floats.getOrPut(key) { MutableStateFlow(null) }
-        override suspend fun putFloat(key: String, value: Float) {
-            floats.getOrPut(key) { MutableStateFlow(null) }.value = value
-        }
-    }
-
     @Test
     fun `defaults hold when nothing is stored`() = runTest {
-        val store = FakeStore()
+        val store = InMemoryKeyValueStore()
         assertEquals("dflt", store.stringSetting("name", "dflt").first())
         assertEquals(true, store.booleanSetting("misere_enabled", true).first())
         assertEquals(0.7f, store.floatSetting("sound_volume", 0.7f).first())
@@ -51,7 +27,7 @@ class KeyValueSettingsTest {
 
     @Test
     fun `every helper round-trips through its typed channel`() = runTest {
-        val store = FakeStore()
+        val store = InMemoryKeyValueStore()
         store.putString("name", "Alice")
         store.putBoolean("hold_tricks", true)
         store.putFloat("sound_volume", 0.3f)
@@ -69,14 +45,14 @@ class KeyValueSettingsTest {
     @Test
     fun `enums persist by exact entry name`() = runTest {
         // The names are the wire format shared with existing installs — never localized labels.
-        val store = FakeStore()
+        val store = InMemoryKeyValueStore()
         store.putEnum("animation_speed", AnimationSpeed.FAST)
-        assertEquals("FAST", store.strings.getValue("animation_speed").value)
+        assertEquals("FAST", store.string("animation_speed").first())
     }
 
     @Test
     fun `an unrecognised stored enum value falls back to the default`() = runTest {
-        val store = FakeStore()
+        val store = InMemoryKeyValueStore()
         store.putString("animation_speed", "TURBO")
         assertEquals(
             AnimationSpeed.NORMAL,
@@ -86,7 +62,7 @@ class KeyValueSettingsTest {
 
     @Test
     fun `setting flows emit on every change`() = runTest {
-        val store = FakeStore()
+        val store = InMemoryKeyValueStore()
         val volumes = store.floatSetting("sound_volume", 0.7f)
         assertEquals(0.7f, volumes.first())
         store.putFloat("sound_volume", 0.1f)
