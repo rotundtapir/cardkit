@@ -17,7 +17,13 @@ import kotlinx.coroutines.withTimeoutOrNull
  * The members' CONTRACTS are part of the gates' behaviour — implement them exactly:
  */
 interface TableTransitions {
-    /** 1-based number of the hand this view belongs to; grows monotonically through a game. */
+    /**
+     * 1-based number of the hand this view belongs to; grows monotonically through a game.
+     * **1-based is load-bearing, not style**: [PacingGates]' signals start at 0 and wait on
+     * `signal >= handNumber`, so a 0-based first hand passes every gate unpaced. The gates
+     * enforce this with a `require` on first use — an engine that numbers hands from 0 must
+     * convert in its adapter.
+     */
     val handNumber: Int
 
     /**
@@ -102,6 +108,7 @@ class PacingGates(
      * block waiting for a deal-animation signal that will never come.
      */
     fun preAcknowledge(view: TableTransitions) {
+        requireOneBasedHand(view)
         acknowledgeHandResult(view.handNumber)
         dealAnimationFinished(view.handNumber)
         trickAcked.value = maxOf(trickAcked.value, trickKey(view.handNumber, view.trickNumber))
@@ -116,6 +123,7 @@ class PacingGates(
      * waits (with "Hold tricks" on) until the player taps it away, or a short timed pause otherwise.
      */
     suspend fun awaitGates(view: TableTransitions) {
+        requireOneBasedHand(view)
         awaitDealGate(view)
         awaitTrickGate(view)
     }
@@ -147,6 +155,7 @@ class PacingGates(
      * view that is never held).
      */
     suspend fun awaitHandRevealed(view: TableTransitions) {
+        requireOneBasedHand(view)
         val speed = animationSpeed.value
         if (speed == AnimationSpeed.OFF) return
         if (view.awaitingHandResultAck) {
@@ -173,6 +182,21 @@ class PacingGates(
         AnimationSpeed.NORMAL -> 1000L
         AnimationSpeed.FAST -> 400L
         AnimationSpeed.OFF -> 0L
+    }
+
+    /**
+     * [TableTransitions.handNumber] is 1-based BY CONTRACT: every signal flow starts at 0 and the
+     * gates wait on `signal >= handNumber`, so a 0-based consumer's first hand satisfies every gate
+     * before anything is acknowledged — bots visibly open the auction during the first deal (found
+     * by euchre's frame harness on its very first tutorial hand). Fail loudly on the first call
+     * instead: convert to 1-based at the game's adapter boundary.
+     */
+    private fun requireOneBasedHand(view: TableTransitions) {
+        require(view.handNumber > 0) {
+            "TableTransitions.handNumber is 1-based (got ${view.handNumber}) — a 0-based hand " +
+                "pre-satisfies the deal/result gates and the first deal plays out unpaced. " +
+                "Convert at the adapter that projects your game's view onto TableTransitions."
+        }
     }
 
     private fun trickKey(handNumber: Int, trickNumber: Int) = handNumber * TRICK_KEY_STRIDE + trickNumber

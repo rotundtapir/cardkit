@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -235,5 +236,14 @@ class PacingGatesTest {
     private companion object {
         const val HAND_SIZE = 10
         const val PAUSE_SLACK = 250L
+    }
+
+    @Test
+    fun `a zero-based handNumber fails loudly instead of passing the gates unpaced`() = runTest {
+        val gates = PacingGates(MutableStateFlow(AnimationSpeed.NORMAL), MutableStateFlow(false)) { 0L }
+        val zeroBased = FakeView(handNumber = 0)
+        assertFailsWith<IllegalArgumentException> { gates.awaitGates(zeroBased) }
+        assertFailsWith<IllegalArgumentException> { gates.preAcknowledge(zeroBased) }
+        assertFailsWith<IllegalArgumentException> { gates.awaitHandRevealed(zeroBased) }
     }
 }
