@@ -25,3 +25,6 @@ Thumbs.db
 
 # Logs / misc
 *.log
+
+# Cross-session agent mailbox (inbound messages from sibling repo sessions), never committed
+/agent-mail/
