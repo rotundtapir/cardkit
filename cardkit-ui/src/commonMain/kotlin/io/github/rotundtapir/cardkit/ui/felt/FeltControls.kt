@@ -2,6 +2,7 @@
 package io.github.rotundtapir.cardkit.ui.felt
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,6 +97,38 @@ fun OnBackgroundIconButton(
             tint = MaterialTheme.colorScheme.onBackground,
         )
     }
+}
+
+/**
+ * Colors for a solid card-white CTA `Button` (the "Play"-style primary action both games
+ * hand-rolled): [CardSurfaceWhite] container with a fixed ink. [contentColor] defaults to the
+ * green [InkOnCardSurface] accent (500's home CTA); pass [NeutralInkOnCardSurface] where the
+ * label carries card-suit glyphs that must keep their true colors. Disabled state stays
+ * felt-legible (faint `onBackground` fill, dimmed-light content) instead of M3's dark-on-dark.
+ */
+@Composable
+fun cardSurfaceButtonColors(contentColor: Color = InkOnCardSurface): ButtonColors {
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    return ButtonDefaults.buttonColors(
+        containerColor = CardSurfaceWhite,
+        contentColor = contentColor,
+        disabledContainerColor = onBackground.copy(alpha = 0.12f),
+        disabledContentColor = onBackground.copy(alpha = 0.38f),
+    )
+}
+
+/**
+ * Tonal button colors on the felt — a faint `onBackground` fill with full-strength content, for
+ * toggles/selected chips (both games' hand-sort toggle). Sizing/padding stay at the call site;
+ * the colors were the duplicated part.
+ */
+@Composable
+fun feltTonalButtonColors(): ButtonColors {
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    return ButtonDefaults.outlinedButtonColors(
+        containerColor = onBackground.copy(alpha = 0.12f),
+        contentColor = onBackground,
+    )
 }
 
 /**
