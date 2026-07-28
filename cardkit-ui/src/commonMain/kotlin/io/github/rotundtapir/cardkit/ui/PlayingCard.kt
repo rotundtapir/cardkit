@@ -126,14 +126,44 @@ private fun Card.faceRes(): DrawableResource = when (this) {
 }
 
 /**
+ * Test-tag prefix of every card face [PlayingCard] draws: `ck:card:`.
+ *
+ * The `ck:` namespace is deliberate. Games tag their own card wrappers too, and an un-namespaced
+ * `card:` prefix put both in one flat namespace: a single prefix query then matched the game's
+ * wrapper, the [PlayingCard] nested inside it, *and* every card [CardArtWarmup] pre-renders — in
+ * euchre, 76 nodes where 5 were wanted. **A game tagging its own card containers must not reuse
+ * this prefix**; pick a distinct one (euchre uses `hand:` for the human's fan).
+ *
+ * Even namespaced, a bare prefix query is global: cardkit puts this tag on *every* card it draws —
+ * hands, tricks, up-cards, dialog illustrations, the warmup deck. Scope card queries to the
+ * container you mean (`hasAnyAncestor(hasTestTag(myHandTag))`) rather than counting raw matches.
+ */
+const val CardTestTagPrefix = "ck:card:"
+
+/**
+ * The test tag [PlayingCard] puts on [card]: [CardTestTagPrefix] plus the card's [Card.label], e.g.
+ * `ck:card:J♠`. Keyed by **label, not [Card.code]** — `ck:card:J♠`, never `ck:card:JS`. The two look
+ * interchangeable in a failing test and are not.
+ */
+fun cardTestTag(card: Card): String = "$CardTestTagPrefix${card.label}"
+
+/** Applies [tag] as a test tag, or nothing at all when it is `null`. */
+private fun Modifier.testTagOrNone(tag: String?): Modifier = if (tag == null) this else testTag(tag)
+
+/**
  * Renders a single face-up [card] using the bundled public-domain card artwork, on a white rounded
  * face so the transparent sprite corners don't show the table through.
+ *
+ * Carries the test tag [cardTestTag] (`ck:card:<label>`) — read [CardTestTagPrefix] before writing a
+ * query against it. Pass [testTag] to substitute your own tag, or `null` to leave the card untagged
+ * (what [CardArtWarmup] does for its off-screen deck).
  */
 @Composable
 fun PlayingCard(
     card: Card,
     modifier: Modifier = Modifier,
     width: Dp = DefaultCardWidth,
+    testTag: String? = cardTestTag(card),
 ) {
     val height = width * CardAspectRatio
     Box(
@@ -142,7 +172,7 @@ fun PlayingCard(
             .clip(cardFaceShape(width))
             .background(Color(0xFFFAFAFA))
             .border(1.dp, Color(0x33000000), cardFaceShape(width))
-            .testTag("card:${card.label}"),
+            .testTagOrNone(testTag),
     ) {
         Image(
             painter = painterResource(card.faceRes()),
