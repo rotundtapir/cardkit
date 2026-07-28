@@ -26,8 +26,10 @@ class CardsTest {
 
     @Test
     fun `labels are the exact UI test-tag alphabet the instrumented and e2e suites key on`() {
-        // These strings are load-bearing: both suites locate cards by "card:<label>". Pin one
-        // court card, the two-char ten, every suit symbol, an extended rank, and the Joker.
+        // These strings are load-bearing: the instrumented suites locate cards by
+        // "ck:card:<label>" (cardkit-ui's CardTestTagPrefix) and the web suites by the same label as
+        // the card's accessible name. Pin one court card, the two-char ten, every suit symbol, an
+        // extended rank, and the Joker.
         assertEquals("Q♣", (Rank.QUEEN of Suit.CLUBS).label)
         assertEquals("K♦", (Rank.KING of Suit.DIAMONDS).label)
         assertEquals("J♠", (Rank.JACK of Suit.SPADES).label)

@@ -18,17 +18,27 @@ import io.github.rotundtapir.cardkit.core.SuitedCard
  * all up front. On web, image resources load asynchronously on first use — without this, the
  * first deal shows blank card backs and faces until each PNG arrives. Compose it once, for the
  * app's lifetime, stacked behind (or beside) the real UI; it draws nothing and handles no input.
+ *
+ * **UI tests:** `clearAndSetSemantics {}` prunes only the **merged** semantics tree. TalkBack and
+ * the browser a11y tree therefore see nothing here, but the ~54 pre-rendered cards inside are still
+ * reachable from `useUnmergedTree = true` finders — that is inherent to `clearAndSetSemantics`, not
+ * a bug to re-diagnose. Their test tags are suppressed ([PlayingCard]'s `testTag = null`), so a
+ * [CardTestTagPrefix] query no longer trips over them; each card's `contentDescription` (its
+ * [io.github.rotundtapir.cardkit.core.Card.label]) still is visible. Scope card queries to the
+ * container you mean rather than matching the whole tree.
  */
 @Composable
 fun CardArtWarmup(modifier: Modifier = Modifier) {
     // clearAndSetSemantics: alpha hides pixels, not semantics — without it every warmed card
-    // shows up in the browser's accessibility tree as a phantom img before the real UI.
+    // shows up in the browser's accessibility tree as a phantom img before the real UI. It prunes
+    // the merged tree only, hence testTag = null below: an unmerged-tree card query in a consumer's
+    // instrumented suite would otherwise find all 54 of these.
     Box(modifier = modifier.size(1.dp).alpha(0f).clearAndSetSemantics {}) {
         CardBack(width = 1.dp)
-        PlayingCard(Joker, width = 1.dp)
+        PlayingCard(Joker, width = 1.dp, testTag = null)
         Suit.entries.forEach { suit ->
             Rank.entries.forEach { rank ->
-                PlayingCard(SuitedCard(rank = rank, suit = suit), width = 1.dp)
+                PlayingCard(SuitedCard(rank = rank, suit = suit), width = 1.dp, testTag = null)
             }
         }
     }
