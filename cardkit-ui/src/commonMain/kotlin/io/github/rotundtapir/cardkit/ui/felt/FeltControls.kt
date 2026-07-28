@@ -3,6 +3,8 @@ package io.github.rotundtapir.cardkit.ui.felt
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -12,6 +14,7 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
@@ -32,22 +35,67 @@ val CardSurfaceWhite = Color(0xFFFAFAFA)
 val InkOnCardSurface = Color(0xFF2E7D32)
 
 /**
+ * Fixed near-black body ink for content on [CardSurfaceWhite] — the neutral counterpart to the
+ * green [InkOnCardSurface] accent. Used by [OnBackgroundOutlinedButton]'s emphasized form so
+ * card-suit glyphs inside keep their true card colors (black ♠♣ / red ♥♦) against the white pill.
+ */
+val NeutralInkOnCardSurface = Color(0xFF1B1B1B)
+
+/**
  * An outlined button legible on the felt: M3's default content color (`primary`) all but vanishes
  * against the green, so pin the content to `onBackground`.
+ *
+ * [emphasized] fills the button as a solid [CardSurfaceWhite] pill with [NeutralInkOnCardSurface]
+ * content — the one-obvious-primary-choice treatment (a bid the tutorial wants tapped, a lobby's
+ * ready-up). Disabled buttons drop to a ghost outline with [disabledContentColor] regardless of
+ * emphasis, so the enabled/disabled split stays unmistakable on the felt.
+ *
+ * The 1dp border sits at `onBackground` alpha 0.6 — the convention both consuming games had
+ * already converged on (cardkit's earlier 0.5 was the odd one out).
  */
 @Composable
 fun OnBackgroundOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    emphasized: Boolean = false,
+    disabledContentColor: Color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
     content: @Composable () -> Unit,
 ) {
     val onBackground = MaterialTheme.colorScheme.onBackground
     OutlinedButton(
         onClick = onClick,
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = onBackground),
-        border = BorderStroke(1.dp, onBackground.copy(alpha = 0.5f)),
+        enabled = enabled,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (emphasized) CardSurfaceWhite else Color.Transparent,
+            contentColor = if (emphasized) NeutralInkOnCardSurface else onBackground,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = disabledContentColor,
+        ),
+        border = BorderStroke(1.dp, onBackground.copy(alpha = 0.6f)),
         modifier = modifier,
     ) { content() }
+}
+
+/**
+ * An icon button whose icon is tinted `onBackground` so it reads on the felt (M3's default
+ * `IconButton` content color is an on-surface tone that vanishes against the green). Both games
+ * duplicated this wrapper around their settings cog.
+ */
+@Composable
+fun OnBackgroundIconButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onBackground,
+        )
+    }
 }
 
 /**
