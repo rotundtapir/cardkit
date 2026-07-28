@@ -63,9 +63,9 @@ class DriveTest {
     }
 
     @Test
-    fun `findSeed returns the first match and reports the range on failure`() {
-        assertEquals(4L, findSeed(0L..10L) { it * it > 10 })
-        val e = assertFailsWith<IllegalStateException> { findSeed(0L..3L) { false } }
+    fun `firstSeedWhere returns the first match and reports the range on failure`() {
+        assertEquals(4L, firstSeedWhere(0L..10L) { it * it > 10 })
+        val e = assertFailsWith<IllegalStateException> { firstSeedWhere(0L..3L) { false } }
         assertTrue("0..3" in e.message.orEmpty())
     }
 
