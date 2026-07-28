@@ -130,7 +130,14 @@ fun PageDots(count: Int, current: Int, modifier: Modifier = Modifier) {
 /**
  * A paged card-face dialog over [pages] with dot progress and Back/Next navigation. Used for a
  * tutorial primer (dismissable, finishing deals the hand) and an epilogue (not dismissable,
- * finishing exits to home). [lastPageTag] tags the dialog surface only on the final page, which is
+ * finishing exits to home).
+ *
+ * [onDismiss] is offered only on the first page — later pages show "Back", which walks the pager.
+ * [dismissLabel] names that first-page action: it defaults to "Cancel" for the usual
+ * abandon-the-flow case, but a caller that returns somewhere specific (a lesson picker, say)
+ * should say so, since a button labelled "Cancel" that navigates rather than cancels misleads.
+ *
+ * [lastPageTag] tags the dialog surface only on the final page, which is
  * how instrumented tests recognise the completion page. [narrationUriFor] resolves a page body to
  * its narration clip URI (see [NarrateEffect]); the default keeps the pager silent.
  */
@@ -143,6 +150,7 @@ fun TutorialPagesDialog(
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
     onDismiss: (() -> Unit)? = null,
+    dismissLabel: String = "Cancel",
     lastPageTag: String? = null,
     uniformBodyHeight: Boolean = false,
     narration: NarrationState? = null,
@@ -178,7 +186,7 @@ fun TutorialPagesDialog(
                 Spacer(Modifier.weight(1f))
                 when {
                     current > 0 -> ReaderTextButton("Back", onClick = { page = current - 1 })
-                    onDismiss != null -> ReaderTextButton("Cancel", onClick = onDismiss)
+                    onDismiss != null -> ReaderTextButton(dismissLabel, onClick = onDismiss)
                 }
                 if (onLastPage) {
                     ReaderTextButton(
