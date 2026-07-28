@@ -9,9 +9,11 @@ import io.github.rotundtapir.cardkit.core.Seat
  * nothing matches, so the test reports "no such deal in 0..10000" instead of a bare NPE.
  *
  * Both games grew this helper verbatim in engine and ai test support; the search itself is
- * game-agnostic.
+ * game-agnostic. Named `firstSeedWhere` (not `findSeed`) so a game-side wrapper whose predicate
+ * takes a dealt *state* can keep the natural `findSeed` name without same-name-extension
+ * resolution swallowing calls to this one (euchre hit exactly that).
  */
-fun findSeed(seeds: LongRange = 0L..10_000L, predicate: (Long) -> Boolean): Long =
+fun firstSeedWhere(seeds: LongRange = 0L..10_000L, predicate: (Long) -> Boolean): Long =
     seeds.firstOrNull(predicate)
         ?: error("No seed in $seeds satisfies the predicate — widen the range or relax the shape")
 
