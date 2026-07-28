@@ -2,7 +2,6 @@
 package io.github.rotundtapir.cardkit.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
@@ -82,10 +81,3 @@ fun CardHand(
         }
     }
 }
-
-/**
- * Clickable only while [enabled] — a factory rather than a conditional `.then(if …)` chain, which
- * crashes AGP lint's SuspiciousModifierThenDetector (see the consuming repo's CLAUDE.md).
- */
-private fun Modifier.clickableWhen(enabled: Boolean, onClick: () -> Unit): Modifier =
-    if (enabled) this.clickable(onClick = onClick) else this
