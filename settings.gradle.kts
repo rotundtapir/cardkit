@@ -58,6 +58,7 @@ rootProject.name = "cardkit"
 include(":cardkit-core")
 include(":cardkit-testing")
 include(":cardkit-ai")
+include(":cardkit-net")
 include(":cardkit-ui")
 include(":cardkit-monetization")
 include(":cardkit-monetization-play")
