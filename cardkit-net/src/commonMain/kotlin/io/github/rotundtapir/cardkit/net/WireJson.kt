@@ -2,6 +2,7 @@
 package io.github.rotundtapir.cardkit.net
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
 import kotlinx.serialization.modules.SerializersModule
@@ -9,6 +10,24 @@ import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 import kotlin.reflect.KClass
+
+/**
+ * The serializers for the two message bases. **Always encode and decode a frame through these**, not
+ * through the reified `encodeToString<ClientMessage>(…)` form.
+ *
+ * The reified form compiles everywhere and works on the JVM, which resolves a serializer for an
+ * un-annotated interface reflectively at runtime. **Kotlin/Wasm has no such fallback** and throws
+ * `Serializer for class 'ClientMessage' is not found … explicitly declared serializer should be used
+ * for interfaces`. Since the browser build is a first-class target, that is a crash in production
+ * rather than an inconvenience — and no JVM test can see it.
+ *
+ * Open polymorphism is byte-identical to a sealed hierarchy on the wire, but it is *not*
+ * lookup-identical across targets. This is the seam where that difference bites.
+ */
+val ClientMessageSerializer: KSerializer<ClientMessage> = PolymorphicSerializer(ClientMessage::class)
+
+/** See [ClientMessageSerializer]. */
+val ServerMessageSerializer: KSerializer<ServerMessage> = PolymorphicSerializer(ServerMessage::class)
 
 /**
  * The messages every cardkit game shares, registered against the open [ClientMessage]/[ServerMessage]

@@ -67,6 +67,15 @@ The wire shape is identical either way, and `cardkit-net`'s `WireShapeTest` pins
 exact golden strings 500 shipped while those types were sealed — treat those as a compatibility
 contract, since released clients speak this format.
 
+**Always serialize a frame through `ClientMessageSerializer`/`ServerMessageSerializer`, never the
+reified `encodeToString<ClientMessage>(…)` form.** Open polymorphism is byte-identical to sealed on
+the wire but *not lookup-identical across targets*: the JVM resolves a serializer for an
+un-annotated interface reflectively, and **Kotlin/Wasm does not** — it throws "explicitly declared
+serializer should be used for interfaces" at runtime. That is a crash in the browser build that no
+JVM test can see; it reached 500's web e2e before anyone noticed. There is no wasm unit test in this
+repo (browser tests need a real Chrome), so the games' Playwright suites are the only stage that
+exercises this path — which is why they gate their merges.
+
 `cardkit-core` and `cardkit-ui` must never reference Google Mobile Ads, Play Billing,
 Firebase, or any proprietary dependency — that is what lets a game's F-Droid flavor
 exclude `cardkit-monetization-play` and contain zero non-free code. The same rule
