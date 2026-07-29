@@ -2,10 +2,12 @@
 package io.github.rotundtapir.cardkit.server
 
 import io.github.rotundtapir.cardkit.net.ClientMessage
+import io.github.rotundtapir.cardkit.net.ClientMessageSerializer
 import io.github.rotundtapir.cardkit.net.ErrorCode
 import io.github.rotundtapir.cardkit.net.ErrorMessage
 import io.github.rotundtapir.cardkit.net.Hello
 import io.github.rotundtapir.cardkit.net.ServerMessage
+import io.github.rotundtapir.cardkit.net.ServerMessageSerializer
 import io.ktor.http.ContentType
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopPreparing
@@ -184,7 +186,7 @@ private fun <S : Any, A : Any, V : Any, C : Any> pumpFrame(
     }
     server.metrics.messageReceived()
     val message = runCatching {
-        server.descriptor.wireJson.decodeFromString<ClientMessage>(text)
+        server.descriptor.wireJson.decodeFromString(ClientMessageSerializer, text)
     }.getOrNull()
     if (message == null) {
         // Log-only for now (per the v1 decision) — malformed frames don't drop the socket yet.
@@ -200,11 +202,11 @@ private suspend fun DefaultWebSocketServerSession.readHello(json: Json): Hello? 
     val text = withTimeoutOrNull(HELLO_TIMEOUT_SECONDS.seconds) {
         (incoming.receive() as? Frame.Text)?.readText()
     } ?: return null
-    return runCatching { json.decodeFromString<ClientMessage>(text) }.getOrNull() as? Hello
+    return runCatching { json.decodeFromString(ClientMessageSerializer, text) }.getOrNull() as? Hello
 }
 
 private suspend fun DefaultWebSocketServerSession.sendMessage(json: Json, message: ServerMessage) {
-    send(Frame.Text(json.encodeToString<ServerMessage>(message)))
+    send(Frame.Text(json.encodeToString(ServerMessageSerializer, message)))
 }
 
 private const val PING_PERIOD_SECONDS = 20L

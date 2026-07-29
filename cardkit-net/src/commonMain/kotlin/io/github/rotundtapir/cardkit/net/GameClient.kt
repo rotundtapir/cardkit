@@ -86,7 +86,7 @@ class KtorGameClient(
     }
 
     override suspend fun send(message: ClientMessage) {
-        session?.send(Frame.Text(json.encodeToString<ClientMessage>(message)))
+        session?.send(Frame.Text(json.encodeToString(ClientMessageSerializer, message)))
     }
 
     override suspend fun close() {
@@ -95,7 +95,7 @@ class KtorGameClient(
 
     /** Decode a text frame, dropping anything unparseable (a malformed frame must not kill the loop). */
     private fun decode(text: String): ServerMessage? =
-        runCatching { json.decodeFromString<ServerMessage>(text) }.getOrNull()
+        runCatching { json.decodeFromString(ServerMessageSerializer, text) }.getOrNull()
 }
 
 /** Platform WebSocket-capable [HttpClient]: CIO on JVM/Android, the JS engine on wasmJs. */
