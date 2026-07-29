@@ -49,6 +49,23 @@ boundaries — CI enforces them and they are the project's reason for existing.
 | `cardkit-ui` | KMP/CMP: android + wasmJs | game-agnostic card-rendering Compose Multiplatform primitives (card PNGs as compose resources in `commonMain/composeResources`) + the card-table sound engine (`SoundEffect` + expect/actual `SoundManager`/`rememberSoundManager`: SoundPool + `res/raw` OGGs on Android, Web Audio + wasm-only compose resources in the browser); `api`-depends on `cardkit-core`. |
 | `cardkit-monetization` | KMP/CMP: android + wasmJs | the `Monetization` interface (common; **no platform types in signatures** — implementations capture their host at construction) + no-op impls: `FossMonetization` (Android, donation link) and `BrowserMonetization` (wasm). **Zero proprietary deps.** |
 | `cardkit-monetization-play` | Android | the *only* module allowed to reference Google Mobile Ads / Play Billing / UMP. Consumed **only** by an app's `play` build flavor; structurally unreachable from wasm. |
+| `cardkit-net` | KMP: jvm + wasmJs | the game-agnostic online wire protocol (`ClientMessage`/`ServerMessage` and everything not a game payload), the `wireJson` factory a game registers its payload types into, display-name rules, and the Ktor WebSocket `GameClient`. May depend only on `cardkit-core`. |
+| `cardkit-server` | **JVM only** | the authoritative server, generic over any cardkit game: room actor, seat hosting with bot substitution and reconnect, session tokens, restart-surviving snapshots, anti-abuse, drain/health/metrics, Ktor transport. May depend only on `cardkit-core` + `cardkit-net`. A **library**, not an application — each game ships its own `main()`. |
+
+Two rules for the online pair, analogous to the ones above:
+
+- **Game specifics enter only through `GameDescriptor` and serializer registration.** No type
+  from any game repo may be named in `cardkit-net` or `cardkit-server`. If the server needs to
+  know something new about a game, it becomes a `GameDescriptor` member.
+- **Nothing depends on `cardkit-server`.** Game engine modules must not (they stay
+  browser-runnable); `cardkit-ui` must not (it is Compose, the server is headless). Only a game's
+  own `:server` module does — the same one-way rule `cardkit-ai` has.
+
+`ClientMessage`/`ServerMessage` are open polymorphic interfaces rather than sealed, because a
+sealed hierarchy is closed at its declaring module and could never accept a game's own payloads.
+The wire shape is identical either way, and `cardkit-net`'s `WireShapeTest` pins that with the
+exact golden strings 500 shipped while those types were sealed — treat those as a compatibility
+contract, since released clients speak this format.
 
 `cardkit-core` and `cardkit-ui` must never reference Google Mobile Ads, Play Billing,
 Firebase, or any proprietary dependency — that is what lets a game's F-Droid flavor

@@ -11,6 +11,8 @@ game app only has to implement its own rules and screens:
 | `cardkit-ui` | Android / Jetpack Compose | card rendering, hand fan, table layout, card animations, theming, generic bidding/score panels |
 | `cardkit-monetization` | Android | `Monetization` interface + a **FOSS no-op** implementation (donation link). No proprietary dependencies. |
 | `cardkit-monetization-play` | Android | Google Mobile Ads + Google Play Billing implementation. Depended on **only** by an app's `play` build flavor. |
+| `cardkit-net` | Kotlin/JVM + Kotlin/Wasm | the online wire protocol shared by client and server — everything that is not a game's own payload — plus the WebSocket client. FOSS-only (Ktor). |
+| `cardkit-server` | Kotlin/JVM | the authoritative online server for any cardkit game: rooms, invite-code lobbies, bot substitution for dropped players, reconnect by session token, games that survive a server restart. A game supplies a `GameDescriptor` and its own `main()`. |
 | `templates/` | — | reusable CI workflow, `FUNDING.yml`, `PRIVACY.md`, and license files for each app |
 
 ## Design principles
