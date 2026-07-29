@@ -110,7 +110,7 @@ object ToyDescriptor : GameDescriptor<ToyState, ToyAction, ToyView, ToyConfig> {
     override val stateSerializer = ToyState.serializer()
     override val configSerializer = ToyConfig.serializer()
 
-    override fun bot(): Strategy<ToyView, ToyAction> =
+    override fun bot(config: ToyConfig): Strategy<ToyView, ToyAction> =
         Strategy { view, random -> view.legalActions.ifEmpty { listOf(ToyAction.Move(1)) }.random(random) }
 
     override fun rulesFor(config: ToyConfig): GameRules<ToyState, ToyAction, ToyView> = ToyRules(config.target)

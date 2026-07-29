@@ -65,9 +65,12 @@ class Room<S : Any, A : Any, V : Any, C : Any>(
 ) {
     private val logger = LoggerFactory.getLogger("room")
     private val commands = Channel<RoomCommand<S, A>>(Channel.UNLIMITED)
-    private val bot: Strategy<V, A> = descriptor.bot()
 
     private var lobbyConfig = initialConfig
+
+    // Built from the config the room was created with. Only the timeouts can change later
+    // (RoomCommand.Configure), never the house rules, so the bot never goes stale.
+    private val bot: Strategy<V, A> = descriptor.bot(initialConfig)
 
     // Read cross-thread (isPlaying/resumedState from the Ktor handler & /health), written on the actor.
     @Volatile

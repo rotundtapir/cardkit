@@ -52,12 +52,17 @@ interface GameDescriptor<S : Any, A : Any, V : Any, C : Any> {
     val botNames: List<String> get() = DEFAULT_BOT_NAMES
 
     /**
-     * A fresh bot strategy for this room. Called once per room and shared by every bot-played seat,
-     * each with its own seeded [kotlin.random.Random], so the strategy must be stateless.
+     * A fresh bot strategy for this room's [config]. Called once per room and shared by every
+     * bot-played seat, each with its own seeded [kotlin.random.Random], so the strategy must be
+     * stateless.
+     *
+     * Takes the config because a bot is a function of the rules it plays under: a house rule that
+     * adds a card or a bid changes what a correct move is, and a bot built for the wrong ruleset
+     * misplays rather than failing loudly.
      *
      * Prefer a cheap heuristic bot: it runs on the server's single vCPU for every abandoned seat.
      */
-    fun bot(): Strategy<V, A>
+    fun bot(config: C): Strategy<V, A>
 
     /** The rules for a lobby's negotiated [config] — the game's house-rule toggles applied. */
     fun rulesFor(config: C): GameRules<S, A, V>
