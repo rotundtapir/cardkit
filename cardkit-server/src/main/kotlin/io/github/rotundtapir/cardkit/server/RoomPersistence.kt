@@ -150,9 +150,16 @@ class FileRoomPersistence<S : Any, C : Any>(
 
     override fun flushSync() {
         // Drain the queue through the same claim protocol the writer coroutine uses, rather than
-        // iterating `pending` — a ConcurrentHashMap key iterator can throw NoSuchElementException
-        // when the writer removes a key between its hasNext and next, and this runs on the graceful
-        // shutdown path, where throwing would abandon every snapshot still queued.
+        // snapshotting `pending.keys` — which is what this used to do, and which can throw
+        // NoSuchElementException straight out of the graceful-shutdown path, abandoning every
+        // snapshot still queued.
+        //
+        // The cause is NOT the ConcurrentHashMap iterator: those are weakly consistent and never
+        // throw on concurrent modification. It is `Iterable.toList()`, whose fast path for a
+        // single-element collection calls `iterator().next()` *without* `hasNext()`. So with exactly
+        // one room pending — the ordinary case on a small server, and the likely one at SIGTERM —
+        // the writer removing that entry between the size check and the next() loses the race. A
+        // two-thread probe reproduces it within a handful of attempts.
         //
         // Every save() enqueues a token, so anything left in `pending` has a token here to claim.
         // remove() is atomic, so racing the writer is safe: whoever claims an entry writes it, the
