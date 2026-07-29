@@ -177,7 +177,15 @@ fun PlayingCard(
         Image(
             painter = painterResource(card.faceRes()),
             contentDescription = card.label,
-            contentScale = ContentScale.Fit,
+            // FillBounds, not Fit: the sprites are 256x372 (aspect 1.4531) on a 1.4 face, and Fit
+            // height-fits them, leaving ~2% white gutters down BOTH SIDES. Each sprite carries its
+            // own baked-in gray edge line, so a gutter puts two dark lines with a white sliver
+            // between them on every side edge - in an overlapped hand fan that reads as a stack of
+            // cards behind each card. FillBounds squashes the art 3.7% vertically (imperceptible
+            // at table sizes) and is what CardBack already does, which is why backs never showed
+            // the artifact. The aspect-correct fix (CardAspectRatio = 1.453125) is a cross-game
+            // geometry change; take it deliberately if the art ever changes.
+            contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize(),
         )
     }
