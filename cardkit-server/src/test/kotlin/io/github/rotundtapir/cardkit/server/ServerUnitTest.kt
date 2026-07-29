@@ -111,6 +111,28 @@ class ServerUnitTest {
         assertEquals(setOf("Ivy", "Leo"), picked.toSet(), "the pool shrinks to the non-colliding names")
     }
 
+    @Test
+    fun `bot names never collide with a seated human, at any seed or count`() {
+        // A human "jack" (or "JACK") must mean no bot named Jack, whichever names the shuffle picks —
+        // so sweep the seeds rather than trusting one. Moved here from the 500 app when this helper
+        // did: it tests the default pool and the helper, neither of which is game-specific.
+        val taken = listOf("jack", "ALICE", "Mona")
+        for (seed in 0L until 50L) {
+            val picked = Room.pickBotNames(
+                pool = GameDescriptor.DEFAULT_BOT_NAMES,
+                taken = taken,
+                count = 3,
+                random = Random(seed),
+            )
+            assertEquals(3, picked.size, "seed=$seed")
+            assertEquals(3, picked.distinct().size, "bot names must be unique among themselves (seed=$seed)")
+            assertTrue(
+                picked.none { it.lowercase() in taken.map(String::lowercase).toSet() },
+                "seed=$seed picked=$picked",
+            )
+        }
+    }
+
     // --- server config ----------------------------------------------------------------------------
 
     @Test
